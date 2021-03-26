@@ -1,0 +1,16 @@
+{
+    "name_example_1": {
+        "origin": { "x": 0, "y": 0 },
+        "size": { "width": 0.25, "height": 0.25 }
+    },
+    "name_example_2": {
+        "grass": {
+            "origin": [ 0, 0 ],
+            "size": [ 0.25, 0.25 ]
+        },
+        "dirt": {
+            "origin": [ 0, 0 ],
+            "size": [ 0.25, 0.25 ]
+        }
+    }
+}
