@@ -21,11 +21,13 @@ public:
     MeshProfile(const MeshProfile &o);
     MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, std::string texture_name);
 
-    MeshProfile translate(glm::vec3 v);
-    MeshProfile scale(glm::vec3 v);
-    MeshProfile rotate(float angle, glm::vec3 dir);
-    MeshProfile& append(const MeshProfile &o);
+    MeshProfile Translate(glm::vec3 v);
+    MeshProfile Scale(glm::vec3 v);
+    MeshProfile Rotate(float angle, glm::vec3 dir);
+    MeshProfile& Append(const MeshProfile &o);
 
+    MeshProfile TexTranslate(glm::vec2 v);
+    MeshProfile TexScale(glm::vec2 v);
 
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;

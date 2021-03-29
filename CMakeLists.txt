@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+set(CMAKE_CXX_STANDARD 14)
 
 project(untitled_game)
 
@@ -16,9 +17,10 @@ if (EMSCRIPTEN)
     message(STATUS "Emscripten")
 endif()
 
-# find_package(glfw3 REQUIRED)
-# find_package(OpenGL REQUIRED)
-# find_package(glm REQUIRED HINTS libs)
+if (NOT EMSCRIPTEN)
+    find_package(glfw3 REQUIRED)
+    find_package(OpenGL REQUIRED)
+endif()
 
 add_subdirectory(libs)
 
@@ -49,8 +51,18 @@ set_target_properties(${PROJECT_NAME}
                           "
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glm)
-target_link_libraries(${PROJECT_NAME} PRIVATE stb)
-target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
-# target_link_libraries(${PROJECT_NAME} glfw3)
-# target_link_libraries(${PROJECT_NAME} OpenGL::GL)
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE glm
+    PRIVATE stb
+    PRIVATE nlohmann_json::nlohmann_json
+    PRIVATE pugixml
+    PRIVATE freetype
+    # PRIVATE nanogui
+)
+
+if (NOT EMSCRIPTEN)
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE glfw3
+        PRIVATE OpenGL::GL
+    )
+endif()

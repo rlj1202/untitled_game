@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Config>
+    <BlockTypes>
+        <BlockType>
+            <Name>Grass</Name>
+        </BlockType>
+        <BlockType>
+            <Name>Stone</Name>
+        </BlockType>
+    </BlockTypes>
+</Config>

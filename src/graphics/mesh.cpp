@@ -23,7 +23,27 @@ MeshProfile::MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int
     : vertices(vertices), indices(indices), texture_name(texture_name) {
 }
 
-MeshProfile MeshProfile::translate(glm::vec3 v) {
+MeshProfile MeshProfile::TexTranslate(glm::vec2 v) {
+    MeshProfile new_profile(*this);
+
+    for (Vertex &vertex : new_profile.vertices) {
+        vertex.tex_coord += v;
+    }
+
+    return new_profile;
+}
+
+MeshProfile MeshProfile::TexScale(glm::vec2 v) {
+    MeshProfile new_profile(*this);
+
+    for (Vertex &vertex : new_profile.vertices) {
+        vertex.tex_coord *= v;
+    }
+
+    return new_profile;
+}
+
+MeshProfile MeshProfile::Translate(glm::vec3 v) {
     MeshProfile new_profile(*this);
 
     for (Vertex &vertex : new_profile.vertices) {
@@ -33,7 +53,7 @@ MeshProfile MeshProfile::translate(glm::vec3 v) {
     return new_profile;
 }
 
-MeshProfile MeshProfile::scale(glm::vec3 v) {
+MeshProfile MeshProfile::Scale(glm::vec3 v) {
     MeshProfile new_profile(*this);
 
     for (Vertex &vertex : new_profile.vertices) {
@@ -43,7 +63,7 @@ MeshProfile MeshProfile::scale(glm::vec3 v) {
     return new_profile;
 }
 
-MeshProfile MeshProfile::rotate(float angle, glm::vec3 dir) {
+MeshProfile MeshProfile::Rotate(float angle, glm::vec3 dir) {
     MeshProfile new_profile(*this);
 
     glm::mat4 mat = glm::rotate(angle, dir);
@@ -55,7 +75,7 @@ MeshProfile MeshProfile::rotate(float angle, glm::vec3 dir) {
     return new_profile;
 }
 
-MeshProfile& MeshProfile::append(const MeshProfile &o) {
+MeshProfile& MeshProfile::Append(const MeshProfile &o) {
     int cur_vertices = vertices.size();
     
     vertices.insert(vertices.end(), o.vertices.begin(), o.vertices.end());

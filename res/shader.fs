@@ -9,7 +9,5 @@ in vec2 tex_coord;
 uniform sampler2D tex;
 
 void main() {
-    // FragColor = texture(tex, tex_coord);
-    FragColor = texture(tex, tex_coord);
-    // FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+    FragColor = texture(tex, tex_coord).rgba;
 }

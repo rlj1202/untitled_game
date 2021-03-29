@@ -1,16 +1,27 @@
 {
-    "name_example_1": {
-        "origin": { "x": 0, "y": 0 },
-        "size": { "width": 0.25, "height": 0.25 }
+    "grass_top": {
+        "origin": [ 0, 0 ],
+        "size": [ 16, 16 ]
     },
-    "name_example_2": {
-        "grass": {
-            "origin": [ 0, 0 ],
-            "size": [ 0.25, 0.25 ]
-        },
-        "dirt": {
-            "origin": [ 0, 0 ],
-            "size": [ 0.25, 0.25 ]
-        }
+    "dirt": {
+        "origin": [ 32, 0 ],
+        "size": [ 16, 16 ]
+    },
+    "grass_side": {
+        "origin": [ 48, 0 ],
+        "size": [ 16, 16 ]
+    },
+    "wood": {
+        "origin": [ 64, 0 ],
+        "size": [ 16, 16 ]
+    },
+
+    "cobblestone": {
+        "origin": [ 0, 16 ],
+        "size": [ 16, 16 ]
+    },
+    "sand": {
+        "origin": [ 32, 16 ],
+        "size": [ 16, 16 ]
     }
 }

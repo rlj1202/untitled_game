@@ -1,5 +1,8 @@
 #include "graphics/shader.h"
 
+#define DEBUG
+#include "debug.h"
+
 unsigned int CompileShader(GLenum type, const char *code) {
     unsigned int shader_id = glCreateShader(type);
     glShaderSource(shader_id, 1, &code, nullptr);
@@ -10,7 +13,7 @@ unsigned int CompileShader(GLenum type, const char *code) {
     glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(shader_id, sizeof(info_log), nullptr, info_log);
-        printf("%s\n", info_log);
+        DEBUG_STDOUT("%s\n", info_log);
     }
 
     return shader_id;
