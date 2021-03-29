@@ -330,7 +330,10 @@ int main() {
     //     DEBUG_STDOUT("\n");
     // }
 
-    shader = std::make_unique<Shader>(LoadShader("/res/shader.vs", "/res/shader.fs"));
+    shader = std::make_unique<Shader>(LoadShader(
+        "/res/vert.glsl",
+        "/res/frag.glsl"
+    ));
     shader->Use();
 
     glm::mat4 proj = glm::ortho(
