@@ -39,40 +39,64 @@ WorldCoord operator+(const BlockCoord block_coord, const ChunkCoord chunk_coord)
 
 class BlockType {
 public:
-    BlockType(std::string name);
+    BlockType(const std::string name);
 
-    std::string name;
+    const std::string name;
+};
+
+class FloorType {
+public:
+    FloorType(const std::string name);
+
+    float speed;
 };
 
 class Block {
 public:
     Block();
+    Block(const BlockType* type);
 
 private:
-    BlockType *type;
+    const BlockType* type;
+};
+
+class Floor {
+public:
+    Floor();
+    Floor(const FloorType* type);
+
+private:
+    const FloorType* type;
 };
 
 class Chunk {
 public:
     Chunk();
 
-    Block& At(const BlockCoord coord);
-    void Set(const BlockCoord coord, Block block);
+    Floor& GetFloor(const BlockCoord coord);
+    void SetFloor(const BlockCoord coord, Floor floor);
+
+    Block& GetBlock(const BlockCoord coord);
+    void SetBlock(const BlockCoord coord, Block block);
 
 private:
+    Floor floors[CHUNK_SIZE][CHUNK_SIZE];
     Block blocks[CHUNK_SIZE][CHUNK_SIZE];
 
-    // Mesh mesh;
+    std::unique_ptr<Mesh> mesh;
 };
 
 class World {
 public:
     World();
 
-    Block& BlockAt(const WorldCoord coord);
+    Floor& GetFloor(const WorldCoord coord);
+    void SetFloor(const WorldCoord coord, Floor floor);
+
+    Block& GetBlock(const WorldCoord coord);
     void SetBlock(const WorldCoord coord, Block block);
 
-    Chunk& ChunkAt(const ChunkCoord coord);
+    Chunk& GetChunk(const ChunkCoord coord);
     void SetChunk(const ChunkCoord coord, std::unique_ptr<Chunk> chunk);
 
 private:

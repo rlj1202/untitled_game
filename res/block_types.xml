@@ -3,9 +3,19 @@
     <BlockTypes>
         <BlockType>
             <Name>Grass</Name>
+            <Texture>
+                <Type>atlas</Type>
+                <File>./testatlas_filename.xml</File>
+                <Name>grass</Name>
+            </Texture>
         </BlockType>
         <BlockType>
             <Name>Stone</Name>
+            <Texture>
+                <Type>atlas</Type>
+                <File>./testatlas_filename.xml</File>
+                <Name>stone</Name>
+            </Texture>
         </BlockType>
     </BlockTypes>
 </Config>

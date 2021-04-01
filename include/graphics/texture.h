@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <queue>
 #include <map>
 #include <glm/glm.hpp>
 
@@ -55,31 +56,53 @@ class TextureBound {
 public:
     std::string name;
     /// coordinates of left-top corner of bound in uv coordinate system.
-    glm::vec2 origin;
+    glm::ivec2 origin;
     /// width and height of bound.
-    glm::vec2 size;
+    glm::ivec2 size;
+};
+
+struct TextureAtlasNode {
+    int x, y;
+    TextureAtlasNode *next, *prev;
+
+    TextureAtlasNode();
+    TextureAtlasNode(int x, int y, TextureAtlasNode *prev);
+    ~TextureAtlasNode();
 };
 
 /**
- * Based on The Skyline Bottom-Left Algorithm.
+ * Based on The Skyline Bottom-Left Algorithm. (Skyline BL)
  */
 class TextureAtlas : public Texture {
 public:
     TextureAtlas(
         unsigned int width, unsigned int height, unsigned int channels,
         unsigned char *data,
+        GLenum internal_format, GLenum format
+    );
+    TextureAtlas(
+        unsigned int width, unsigned int height, unsigned int channels,
+        unsigned char *data,
         GLenum internal_format, GLenum format,
         const std::vector<TextureBound> &bounds
     );
+    TextureAtlas(TextureAtlas &&o);
+    ~TextureAtlas();
 
     /**
      * Find appropriate place given width and height.
+     * Returns corner of rect.
      */
-    TextureBound Claim(int width, int height);
+    glm::ivec2 Claim(int width, int height);
 
     glm::mat4 GetTextureTransformMatrix(const std::string name);
 
 private:
+    glm::ivec2 FindBottomLeft(int width, int height, TextureAtlasNode **best_node);
+    int FindMinY(TextureAtlasNode *node, int width);
+
+    TextureAtlasNode *head;
+
     std::vector<TextureBound> bounds;
 
     std::map<std::string, glm::mat4> mats;

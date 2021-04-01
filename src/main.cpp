@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <memory>
 #include <algorithm>
 #include <vector>
@@ -58,23 +59,53 @@ std::unique_ptr<Mesh>   quad_mesh;
 
 std::unique_ptr<Texture> test_tex;
 std::unique_ptr<Texture> tex;
+std::unique_ptr<TextureAtlas> rect_pack_tex;
 
 float camera_x;
 float camera_y;
 float camera_scale = 100.0f;
 
+// for calculating fps
 double previous_time;
 int frame_count;
 double elapsed_time_sum;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int modifier) {
-    DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
-    DEBUG_STDOUT("camera : %f %f\n", camera_x, camera_y);
+    // DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
+    // DEBUG_STDOUT("camera : %f %f\n", camera_x, camera_y);
 
     if (key == GLFW_KEY_KP_SUBTRACT) {
         camera_scale /= 1.1;
     } else if (key == GLFW_KEY_KP_ADD) {
         camera_scale *= 1.1;
+    } else if (key == GLFW_KEY_G && action == GLFW_RELEASE) {
+        for (int i = 0; i < 1; i++) {
+            int width = rand() % 50 + 10;
+            int height = rand() % 50 + 10;
+
+            unsigned char R = rand();
+            unsigned char G = rand();
+            unsigned char B = rand();
+         
+            unsigned char* data = new unsigned char[width * height * 3];
+            for (int r = 0; r < height; r++) {
+                for (int c = 0; c < width; c++) {
+                    data[c*3 + r * width * 3 + 0] = R;
+                    data[c*3 + r * width * 3 + 1] = G;
+                    data[c*3 + r * width * 3 + 2] = B;
+                }
+            }
+
+            glm::ivec2 pos = rect_pack_tex->Claim(width, height);
+            if (pos.x >= 0 && pos.y >= 0) {
+                rect_pack_tex->SetData(pos.x, pos.y, width, height, data);
+            } else {
+                DEBUG_STDOUT("no more space!\n");
+            }
+
+            delete[] data;
+        }
+        rect_pack_tex->Bake();
     }
 }
 
@@ -126,7 +157,8 @@ void mainLoop() {
     mesh->Bind();
     mesh->Draw();
 
-    test_tex->Bind();
+    //test_tex->Bind();
+    rect_pack_tex->Bind();
     quad_mesh->Bind();
     quad_mesh->Draw();
 
@@ -182,6 +214,8 @@ Texture LoadTexture(std::string path) {
 }
 
 int main() {
+    srand(std::time(nullptr));
+
     // using json test
     json test;
     std::ifstream json_file("/res/minecraft_atlas.json");
@@ -221,13 +255,13 @@ int main() {
         return -1;
     }
 
-    error = FT_Set_Pixel_Sizes(ft_face, 0, 64);
+    error = FT_Set_Pixel_Sizes(ft_face, 0, 128);
     if (error) {
         DEBUG_STDOUT("Failed to set pixel sizes\n");
         return -1;
     }
 
-    error = FT_Load_Char(ft_face, U'갸', FT_LOAD_RENDER);
+    error = FT_Load_Char(ft_face, U'뷁', FT_LOAD_RENDER);
     if (error) {
         DEBUG_STDOUT("Failed to load char\n");
         return -1;
@@ -272,8 +306,6 @@ int main() {
         0, 2, 3,
     };
     MeshProfile meshprofile_quad(vertices, indices, "");
-
-    std::srand(0);
 
     MeshProfile meshprofile_tilemap;
     for (int x = -8; x < 8; x++) {
@@ -329,6 +361,12 @@ int main() {
     //     }
     //     DEBUG_STDOUT("\n");
     // }
+
+    rect_pack_tex = std::make_unique<TextureAtlas>(
+        500, 500, 3,
+        nullptr,
+        GL_RGB8, GL_RGB
+    );
 
     shader = std::make_unique<Shader>(LoadShader(
         "/res/vert.glsl",
