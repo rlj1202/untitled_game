@@ -206,7 +206,7 @@ glm::ivec2 TextureAtlas::Claim(int width, int height) {
             if (right >= new_node->x + width) {
                 break;
             }
-            DEBUG_STDOUT("delete node : (%d %d), right = %d\n", cur->x, cur->y, right);
+            // DEBUG_STDOUT("delete node : (%d %d), right = %d\n", cur->x, cur->y, right);
             TextureAtlasNode *next = cur->next;
             cur->next = nullptr;
             cur->prev = nullptr;
@@ -258,8 +258,8 @@ glm::ivec2 TextureAtlas::FindBottomLeft(int width, int height, TextureAtlasNode 
         cur = cur->next;
     }
 
-    DEBUG_STDOUT("FindBottomLeft: (%d %d)\n", width, height);
-    if (*best_node) DEBUG_STDOUT("\t(%d %d)\n", (*best_node)->x, (*best_node)->y);
+    // DEBUG_STDOUT("FindBottomLeft: (%d %d)\n", width, height);
+    // if (*best_node) DEBUG_STDOUT("\t(%d %d)\n", (*best_node)->x, (*best_node)->y);
 
     if (*best_node) return {(*best_node)->x, best_y};
     else return {-1, -1};

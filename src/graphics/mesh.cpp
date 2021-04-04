@@ -89,7 +89,7 @@ MeshProfile& MeshProfile::Append(const MeshProfile &o) {
 
 Mesh::Mesh(unsigned int vao_id, std::vector<unsigned int> vbo_id, unsigned int ebo_id, unsigned int cnt_vertices)
     : vao_id(vao_id), vbo_id(vbo_id), ebo_id(ebo_id), cnt_vertices(cnt_vertices) {
-    DEBUG_STDOUT("mesh created : %d\n", vao_id);
+    // DEBUG_STDOUT("mesh created : %d\n", vao_id);
 }
 
 Mesh::Mesh(Mesh&& mesh) {
@@ -104,7 +104,7 @@ Mesh::Mesh(Mesh&& mesh) {
 }
 
 Mesh::~Mesh() {
-    if (vao_id) DEBUG_STDOUT("mesh deleted : %d\n", vao_id);
+    // if (vao_id) DEBUG_STDOUT("mesh deleted : %d\n", vao_id);
 
     if (vao_id) glDeleteVertexArrays(1, &vao_id);
     if (!vbo_id.empty()) glDeleteBuffers(vbo_id.size(), &vbo_id[0]);

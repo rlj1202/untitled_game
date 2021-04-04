@@ -42,24 +42,26 @@
 #include "graphics/shader.h"
 #include "graphics/mesh.h"
 #include "graphics/mesh_builder.h"
+#include "graphics/font.h"
 #include "chunk.h"
 
 using json = nlohmann::json;
 
+int width = 800;
+int height = 600;
+std::string title = "untitled_game";
+
 // glfw
 GLFWwindow* window;
-
-// freetype
-FT_Library ft_library;
-FT_Face    ft_face;
 
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Mesh>   mesh;
 std::unique_ptr<Mesh>   quad_mesh;
 
-std::unique_ptr<Texture> test_tex;
 std::unique_ptr<Texture> tex;
 std::unique_ptr<TextureAtlas> rect_pack_tex;
+
+std::unique_ptr<FontRenderer> font_renderer;
 
 float camera_x;
 float camera_y;
@@ -157,10 +159,20 @@ void mainLoop() {
     mesh->Bind();
     mesh->Draw();
 
-    //test_tex->Bind();
     rect_pack_tex->Bind();
     quad_mesh->Bind();
     quad_mesh->Draw();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glm::mat4 font_view(1);
+    shader->SetUniformMat4("view", font_view);
+    font_renderer->Render(
+        -width/2.0f + 10,
+        -height/2.0f + 10,
+        L"안녕하세요! 한글 렌더링 테스트입니다."
+    );
+    glDisable(GL_BLEND);
 
     double end_time = glfwGetTime();
     double elapsed_time = end_time - current_time;
@@ -234,52 +246,9 @@ int main() {
         DEBUG_STDOUT("block type name : %s\n", block_type.child("Name").child_value());
     }
 
-    // freetype
-    FT_Error error = FT_Init_FreeType(&ft_library);
-    if (error) {
-        DEBUG_STDOUT("Failed to init freetype\n");
-        return -1;
-    }
-
-    error = FT_New_Face(
-        ft_library,
-        "/res/D2Coding-Ver1.3.2-20180524-all.ttc",
-        0, // face index
-        &ft_face
-    );
-    if (error == FT_Err_Unknown_File_Format) {
-        DEBUG_STDOUT("Unknown font file format.\n");
-        return -1;
-    } else if (error) {
-        DEBUG_STDOUT("Failed to load font file.\n");
-        return -1;
-    }
-
-    error = FT_Set_Pixel_Sizes(ft_face, 0, 128);
-    if (error) {
-        DEBUG_STDOUT("Failed to set pixel sizes\n");
-        return -1;
-    }
-
-    error = FT_Load_Char(ft_face, U'뷁', FT_LOAD_RENDER);
-    if (error) {
-        DEBUG_STDOUT("Failed to load char\n");
-        return -1;
-    }
-
-    error = FT_Render_Glyph(ft_face->glyph, FT_RENDER_MODE_NORMAL);
-    if (error) {
-        DEBUG_STDOUT("Failed to render glyph.\n");
-        return -1;
-    }
-
     // start of program
     if (!glfwInit())
         return -1;
-
-    int width = 800;
-    int height = 600;
-    std::string title = "untitled_game";
 
     window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!window) {
@@ -330,43 +299,18 @@ int main() {
 
     tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    test_tex = std::make_unique<Texture>(
-        ft_face->glyph->bitmap.width,
-        ft_face->glyph->bitmap.rows,
-        1,
-        ft_face->glyph->bitmap.buffer,
-        GL_LUMINANCE,
-        GL_LUMINANCE
-    );
-    DEBUG_STDOUT("Glyph image test : width = %d, height = %d, width bytes = %d\n",
-        ft_face->glyph->bitmap.width,
-        ft_face->glyph->bitmap.rows,
-        ft_face->glyph->bitmap.pitch
-    );
-    // for (int r = 0; r < ft_face->glyph->bitmap.rows; r++) {
-    //     for (int c = 0; c < ft_face->glyph->bitmap.width; c++) {
-    //         unsigned char value = ft_face->glyph->bitmap.buffer[c + r * ft_face->glyph->bitmap.width];
-    //         DEBUG_STDOUT("%3d, ", value);
-    //     }
-    //     DEBUG_STDOUT("\n");
-    // }
-    // DEBUG_STDOUT("\n");
-    // for (int r = 0; r < ft_face->glyph->bitmap.rows; r++) {
-    //     for (int c = 0; c < ft_face->glyph->bitmap.width; c++) {
-    //         unsigned char value = ft_face->glyph->bitmap.buffer[c + r * ft_face->glyph->bitmap.width];
-    //         std::string scale = " .:-=+*#%@";
-    //         char t = scale[(int) (value / 256.0f * scale.size())];
-    //         DEBUG_STDOUT("%c%c", t, t);
-    //     }
-    //     DEBUG_STDOUT("\n");
-    // }
-
     rect_pack_tex = std::make_unique<TextureAtlas>(
         500, 500, 3,
         nullptr,
         GL_RGB8, GL_RGB
     );
+
+    FontLibrary font_library;
+    FontFace font_face = font_library.NewFontFace(
+        "/res/D2Coding-Ver1.3.2-20180524-all.ttc"
+        // "/res/NanumGothic.ttf"
+    );
+    font_renderer = std::make_unique<FontRenderer>(font_face);
 
     shader = std::make_unique<Shader>(LoadShader(
         "/res/vert.glsl",

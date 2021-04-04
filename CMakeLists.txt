@@ -47,6 +47,7 @@ set_target_properties(${PROJECT_NAME}
                           -s FULL_ES3=1 \
                           -s USE_GLFW=3 \
                           -s WASM=1 \
+                          -s ALLOW_MEMORY_GROWTH=1 \
                           --preload-file ${PROJECT_SOURCE_DIR}/res@/res \
                           "
 )
