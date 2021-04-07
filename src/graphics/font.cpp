@@ -133,8 +133,6 @@ FontRenderer::FontRenderer(FontFace face) : face(face) {
 }
 
 void FontRenderer::Render(int x, int y, std::wstring text) {
-    MeshProfile profile;
-
     float cur_x = 0;
     uint32_t prev_glyph_index = 0;
 
@@ -174,12 +172,16 @@ void FontRenderer::Render(int x, int y, std::wstring text) {
 
         cur_x += info.advance_x;
     }
+}
 
+void FontRenderer::Flush() {
     Mesh mesh = BuildMesh(profile);
 
     texture_atlas->Bind();
     mesh.Bind();
     mesh.Draw();
+
+    profile = MeshProfile();
 }
 
 Texture* FontRenderer::GetTexture() {
@@ -218,7 +220,8 @@ bool FontRenderer::LoadGlyph(unsigned int codepoint) {
         return false;
     }
 
-    glm::ivec2 pos = texture_atlas->Claim(bitmap.width + 1, bitmap.rows + 1);
+    int padding = 1;
+    glm::ivec2 pos = texture_atlas->Claim(bitmap.width + padding, bitmap.rows + padding);
     if (pos.x == -1 || pos.y == -1) {
         // DEBUG_STDOUT("no more space for glyph u+%04x.\n", charcode);
         return false;

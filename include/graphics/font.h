@@ -65,6 +65,7 @@ public:
     FontRenderer(FontFace face);
 
     void Render(int x, int y, std::wstring text);
+    void Flush();
 
     Texture* GetTexture();
 
@@ -75,6 +76,7 @@ private:
     std::unordered_map<unsigned int, Glyph> glyph_infos;
 
     MeshProfile quad_profile;
+    MeshProfile profile;
     std::unique_ptr<TextureAtlas> texture_atlas;
 };
 

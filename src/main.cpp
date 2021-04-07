@@ -57,9 +57,9 @@ GLFWwindow* window;
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Mesh>   mesh;
 std::unique_ptr<Mesh>   quad_mesh;
+std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
 
 std::unique_ptr<Texture> tex;
-std::unique_ptr<TextureAtlas> rect_pack_tex;
 
 std::unique_ptr<FontRenderer> font_renderer;
 
@@ -80,34 +80,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         camera_scale /= 1.1;
     } else if (key == GLFW_KEY_KP_ADD) {
         camera_scale *= 1.1;
-    } else if (key == GLFW_KEY_G && action == GLFW_RELEASE) {
-        for (int i = 0; i < 1; i++) {
-            int width = rand() % 50 + 10;
-            int height = rand() % 50 + 10;
-
-            unsigned char R = rand();
-            unsigned char G = rand();
-            unsigned char B = rand();
-         
-            unsigned char* data = new unsigned char[width * height * 3];
-            for (int r = 0; r < height; r++) {
-                for (int c = 0; c < width; c++) {
-                    data[c*3 + r * width * 3 + 0] = R;
-                    data[c*3 + r * width * 3 + 1] = G;
-                    data[c*3 + r * width * 3 + 2] = B;
-                }
-            }
-
-            glm::ivec2 pos = rect_pack_tex->Claim(width, height);
-            if (pos.x >= 0 && pos.y >= 0) {
-                rect_pack_tex->SetData(pos.x, pos.y, width, height, data);
-            } else {
-                DEBUG_STDOUT("no more space!\n");
-            }
-
-            delete[] data;
-        }
-        rect_pack_tex->Bake();
     }
 }
 
@@ -159,19 +131,38 @@ void mainLoop() {
     mesh->Bind();
     mesh->Draw();
 
-    rect_pack_tex->Bind();
-    quad_mesh->Bind();
-    quad_mesh->Draw();
+    tex->Bind();
+    test_mesh->Bind();
+    test_mesh->Draw();
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // font_renderer->GetTexture()->Bind();
+    // quad_mesh->Bind();
+    // quad_mesh->Draw();
+
     glm::mat4 font_view(1);
     shader->SetUniformMat4("view", font_view);
-    font_renderer->Render(
-        -width/2.0f + 10,
-        -height/2.0f + 10,
-        L"안녕하세요! 한글 렌더링 테스트입니다."
-    );
+    std::wstring strs[] = {
+        L"안녕하세요! 한글 렌더링 테스트입니다. Hello, world!",
+        L"많은 글 글 글...",
+        L"많은 글 글 글...",
+        L"많은 글 글 글...",
+        L"많은 글 글 글...",
+        L"많은 글 글 글...",
+        L"많은 글 글 글...",
+        L"많은 글 글 글...",
+    };
+    int cur_x = -width/2.0f + 10;
+    int cur_y = height/2.0f - 10 - 16;
+    for (int i = 0; i < 8; i++) {
+        font_renderer->Render(
+            cur_x, cur_y, strs[i]
+        );
+        cur_y -= 16 + 2;
+    }
+    font_renderer->Flush();
     glDisable(GL_BLEND);
 
     double end_time = glfwGetTime();
@@ -297,13 +288,36 @@ int main() {
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
         ));
 
-    tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
+    {
+        std::vector<float> vertices = {
+            -1.0f, 0.0f, 0.0f, 
+             1.0f, 0.0f, 0.0f, 
+             0.0f, 1.0f, 0.0f, 
+        };
+        std::vector<float> tex_coords = {
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+            0.5f, 0.0f,
+        };
+        std::vector<float> something_else = {
+            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
+            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
+            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
+        };
+        std::vector<unsigned int> indices = {
+            0, 1, 2,
+        };
 
-    rect_pack_tex = std::make_unique<TextureAtlas>(
-        500, 500, 3,
-        nullptr,
-        GL_RGB8, GL_RGB
-    );
+        test_mesh = std::make_unique<
+            _Mesh<
+                Vbo<float, 3>,
+                Vbo<float, 2>,
+                Vbo<float, 3, 3>
+            >
+        >(indices, vertices, tex_coords, something_else);
+    }
+
+    tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
 
     FontLibrary font_library;
     FontFace font_face = font_library.NewFontFace(
