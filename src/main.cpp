@@ -57,9 +57,11 @@ GLFWwindow* window;
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Mesh>   mesh;
 std::unique_ptr<Mesh>   quad_mesh;
+std::unique_ptr<Mesh>   gui_mesh;
 std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
 
 std::unique_ptr<Texture> tex;
+std::unique_ptr<Texture> gui_tex;
 
 std::unique_ptr<FontRenderer> font_renderer;
 
@@ -138,12 +140,13 @@ void mainLoop() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // font_renderer->GetTexture()->Bind();
-    // quad_mesh->Bind();
-    // quad_mesh->Draw();
-
     glm::mat4 font_view(1);
     shader->SetUniformMat4("view", font_view);
+
+    gui_tex->Bind();
+    gui_mesh->Bind();
+    gui_mesh->Draw();
+
     std::wstring strs[] = {
         L"안녕하세요! 한글 렌더링 테스트입니다. Hello, world!",
         L"많은 글 글 글...",
@@ -286,7 +289,16 @@ int main() {
         meshprofile_quad
             .Translate(glm::vec3(-0.5f, -0.5f, 0.0f))
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
-        ));
+    ));
+    gui_mesh = std::make_unique<Mesh>(BuildMesh(
+        meshprofile_quad
+            .Scale(glm::vec3(100.0f, 100.0f, 0.0f))
+            .Translate(glm::vec3(
+                -width/2.0f + 10.0f,
+                -height/2.0f + 10.0f,
+                0.0f)
+            )
+    ));
 
     {
         std::vector<float> vertices = {
@@ -318,6 +330,7 @@ int main() {
     }
 
     tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
+    gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
 
     FontLibrary font_library;
     FontFace font_face = font_library.NewFontFace(
@@ -331,6 +344,7 @@ int main() {
         "/res/frag.glsl"
     ));
     shader->Use();
+
 
     glm::mat4 proj = glm::ortho(
         -width / 2.0f, width / 2.0f,
