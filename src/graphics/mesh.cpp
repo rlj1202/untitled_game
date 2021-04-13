@@ -15,10 +15,6 @@ MeshProfile::MeshProfile()
     : vertices(std::vector<Vertex>()), indices(std::vector<unsigned int>()) {
 }
 
-MeshProfile::MeshProfile(const MeshProfile &o)
-    : vertices(o.vertices), indices(o.indices) {
-}
-
 MeshProfile::MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, std::string texture_name)
     : vertices(vertices), indices(indices), texture_name(texture_name) {
 }
@@ -84,6 +80,24 @@ MeshProfile& MeshProfile::Append(const MeshProfile &o) {
         indices.push_back(index + cur_vertices);
     }
 
+    return *this;
+}
+
+MeshProfile& MeshProfile::Append(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) {
+    int cur_vertices = this->vertices.size();
+    
+    this->vertices.insert(this->vertices.end(), vertices.begin(), vertices.end());
+
+    for (int index : indices) {
+        this->indices.push_back(index + cur_vertices);
+    }
+
+    return *this;
+}
+
+MeshProfile& MeshProfile::Clear() {
+    vertices.clear();
+    indices.clear();
     return *this;
 }
 

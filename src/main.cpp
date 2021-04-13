@@ -25,10 +25,6 @@
 // zeux/pugixml
 #include <pugixml.hpp>
 
-// freetype2
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 #define DEBUG
 #include "debug.h"
 
@@ -149,22 +145,22 @@ void mainLoop() {
         -0.1f, 100.0f);
     glm::mat4 model(1);
     glm::mat4 tex_transform(1);
+    glm::mat4 view(1);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
     tex_transform = glm::scale(tex_transform, glm::vec3(1.0f, 1.0f, 1.0f));
+    view = glm::scale(view, glm::vec3(camera_scale, camera_scale, 0));
+    view = glm::translate(view, glm::vec3(-camera_x, -camera_y, 0.0f));
 
     shader->SetUniformMat4("projection", proj);
     shader->SetUniformMat4("model", model);
     shader->SetUniformMat4("tex_transform", tex_transform);
-
-    glm::mat4 view(1);
-    view = glm::scale(view, glm::vec3(camera_scale, camera_scale, 0));
-    view = glm::translate(view, glm::vec3(-camera_x, -camera_y, 0.0f));
-
     shader->SetUniformMat4("view", view);
 
     tex->Bind();
     mesh->Bind();
     mesh->Draw();
+    
+    // End render world
 
     // Render gui
     glm::mat4 gui_proj = glm::ortho(
@@ -172,10 +168,12 @@ void mainLoop() {
         (float) height, 0.0f,
         -0.1f, 100.0f
     );
-    glm::mat4 gui_view(1);
+    glm::mat4 init_mat(1);
 
     shader->SetUniformMat4("projection", gui_proj);
-    shader->SetUniformMat4("view", gui_view);
+    shader->SetUniformMat4("view", init_mat);
+    shader->SetUniformMat4("model", init_mat);
+    shader->SetUniformMat4("tex_transform", init_mat);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -188,6 +186,8 @@ void mainLoop() {
     canvas->Render();
 
     glDisable(GL_BLEND);
+
+    // End render gui
 
     double end_time = glfwGetTime();
     double elapsed_time = end_time - current_time;

@@ -18,6 +18,8 @@ public:
 class IGuiNode {
 public:
     virtual GuiArea Draw(Canvas& canvas, GuiArea area) = 0;
+
+    virtual bool OnMouseClick(glm::vec2 pos) { return false; }
 };
 
 class IGuiLayout : public IGuiNode {

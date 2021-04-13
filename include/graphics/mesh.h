@@ -14,6 +14,7 @@
 class Vertex {
 public:
     Vertex(glm::vec3 position, glm::vec2 tex_coord);
+    
     glm::vec3 position;
     glm::vec2 tex_coord;
 };
@@ -21,16 +22,18 @@ public:
 class MeshProfile {
 public:
     MeshProfile();
-    MeshProfile(const MeshProfile &o);
     MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, std::string texture_name);
 
     MeshProfile Translate(glm::vec3 v);
     MeshProfile Scale(glm::vec3 v);
     MeshProfile Rotate(float angle, glm::vec3 dir);
     MeshProfile& Append(const MeshProfile &o);
+    MeshProfile& Append(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
 
     MeshProfile TexTranslate(glm::vec2 v);
     MeshProfile TexScale(glm::vec2 v);
+
+    MeshProfile& Clear();
 
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;

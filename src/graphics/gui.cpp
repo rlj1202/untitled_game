@@ -62,7 +62,7 @@ GuiArea GuiSimpleLayout::Draw(Canvas& canvas, GuiArea area) {
         }
     }
 
-    canvas.Draw(vertices, indices);
+    canvas.Draw(texture, vertices, indices);
 
     canvas.GetFontRenderer().Render(
         this->area.x + 10,

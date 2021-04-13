@@ -9,18 +9,14 @@ Canvas::Canvas() {
         // "/res/NanumGothic.ttf"
     );
     font_renderer = std::make_unique<FontRenderer>(font_face);
-
-    vertices.reserve(sizeof(Vertex) * 100);
-    indices.reserve(sizeof(unsigned int) * 100);
 }
 
-void Canvas::Draw(std::vector<Vertex> vertices, std::vector<unsigned int> indices) {
-    this->vertices.insert(this->vertices.end(), vertices.begin(), vertices.end());
+void Canvas::Draw(Texture* texture, std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) {
+    mesh_profiles[texture].Append(vertices, indices);
+}
 
-    int cur_indices = this->indices.size();
-    for (unsigned int index : indices) {
-        this->indices.push_back(index + cur_indices);
-    }
+void Canvas::Draw(Texture* texture, MeshProfile& profile) {
+    mesh_profiles[texture].Append(profile);
 }
 
 FontRenderer& Canvas::GetFontRenderer() {
@@ -28,13 +24,17 @@ FontRenderer& Canvas::GetFontRenderer() {
 }
 
 void Canvas::Render() {
-    mesh = std::make_unique<Mesh>(BuildMesh(vertices, indices));
-    mesh->Draw();
+    for (auto key : mesh_profiles) {
+        key.first->Bind();
+        mesh = std::make_unique<Mesh>(BuildMesh(key.second));
+        mesh->Draw();
+    }
 
     font_renderer->Flush();
 }
 
 void Canvas::Clear() {
-    vertices.clear();
-    indices.clear();
+    for (auto& pair : mesh_profiles) {
+        pair.second.Clear();
+    }
 }

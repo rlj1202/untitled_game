@@ -2,10 +2,12 @@
 #define H_CANVAS
 
 #include <vector>
+#include <map>
 #include <memory>
 
 #include "graphics/mesh.h"
 #include "graphics/font.h"
+#include "graphics/texture.h"
 
 /**
  * @class Canvas
@@ -17,7 +19,8 @@ class Canvas {
 public:
     Canvas();
 
-    void Draw(std::vector<Vertex> vertices, std::vector<unsigned int> indices);
+    void Draw(Texture* texture, std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
+    void Draw(Texture* texture, MeshProfile& profile);
     void DrawLine();
     void DrawRect();
 
@@ -30,9 +33,7 @@ private:
     std::unique_ptr<FontRenderer> font_renderer;
 
     std::unique_ptr<Mesh> mesh;
-
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
+    std::unordered_map<Texture*, MeshProfile> mesh_profiles;
 };
 
 #endif
