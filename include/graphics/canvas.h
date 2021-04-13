@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "graphics/mesh.h"
+#include "graphics/font.h"
 
 /**
  * @class Canvas
@@ -20,10 +21,14 @@ public:
     void DrawLine();
     void DrawRect();
 
+    FontRenderer& GetFontRenderer();
+
     void Render();
     void Clear();
 
 private:
+    std::unique_ptr<FontRenderer> font_renderer;
+
     std::unique_ptr<Mesh> mesh;
 
     std::vector<Vertex> vertices;

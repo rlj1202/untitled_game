@@ -64,6 +64,11 @@ GuiArea GuiSimpleLayout::Draw(Canvas& canvas, GuiArea area) {
 
     canvas.Draw(vertices, indices);
 
+    canvas.GetFontRenderer().Render(
+        this->area.x + 10,
+        this->area.y + 10 + 16,
+        L"안녕하세요! 한글 렌더링 테스트입니다. Hello, world!");
+
     return {};
 }
 

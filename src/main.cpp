@@ -4,9 +4,7 @@
 #include <memory>
 #include <algorithm>
 #include <vector>
-#include <iostream>
 #include <fstream>
-#include <sstream>
 
 // emscripten
 #ifdef EMSCRIPTEN
@@ -20,10 +18,6 @@
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// nothings/stb
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 // nlohmann/json
 #include <nlohmann/json.hpp>
@@ -42,9 +36,9 @@
 #include "graphics/shader.h"
 #include "graphics/mesh.h"
 #include "graphics/mesh_builder.h"
-#include "graphics/font.h"
 #include "graphics/gui.h"
 #include "chunk.h"
+#include "utils.h"
 
 using json = nlohmann::json;
 
@@ -62,8 +56,6 @@ std::unique_ptr<Mesh>   quad_mesh;
 
 std::unique_ptr<Texture> tex;
 std::unique_ptr<Texture> gui_tex;
-
-std::unique_ptr<FontRenderer> font_renderer;
 
 std::unique_ptr<Canvas>          canvas;
 std::unique_ptr<GuiSimpleLayout> simple_gui;
@@ -116,8 +108,6 @@ void cursorpos_callback(GLFWwindow *window, double xpos, double ypos) {
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
         glm::vec2 cur_pos(xpos, ypos);
         glm::vec2 delta = cur_pos - prev_cursor_pos;
-
-        DEBUG_STDOUT("mouse : %f %f\n", delta.x, delta.y);
 
         GuiArea& area = simple_gui->GetArea();
         if (area.IsIn(cur_pos)) {
@@ -197,25 +187,6 @@ void mainLoop() {
     }
     canvas->Render();
 
-    std::wstring strs[] = {
-        L"안녕하세요! 한글 렌더링 테스트입니다. Hello, world!",
-        L"많은 글 글 글...",
-        L"많은 글 글 글...",
-        L"많은 글 글 글...",
-        L"많은 글 글 글...",
-        L"많은 글 글 글...",
-        L"많은 글 글 글...",
-        L"많은 글 글 글...",
-    };
-    int cur_x = 20;
-    int cur_y = 20 + 16;
-    for (int i = 0; i < 8; i++) {
-        font_renderer->Render(
-            cur_x, cur_y, strs[i]
-        );
-        cur_y += 16 + 2;
-    }
-    font_renderer->Flush();
     glDisable(GL_BLEND);
 
     double end_time = glfwGetTime();
@@ -224,49 +195,6 @@ void mainLoop() {
 
     glfwSwapBuffers(window);
     glfwPollEvents();
-}
-
-Shader LoadShader(std::string vertex_shader, std::string fragment_shader) {
-    std::ifstream vertex_shader_file(vertex_shader);
-    std::ifstream fragment_shader_file(fragment_shader);
-
-    std::stringstream vertex_shader_stream, fragment_shader_stream;
-    vertex_shader_stream << vertex_shader_file.rdbuf();
-    fragment_shader_stream << fragment_shader_file.rdbuf();
-    
-    vertex_shader_file.close();
-    fragment_shader_file.close();
-    
-    std::string vertex_shader_code = vertex_shader_stream.str();
-    std::string fragment_shader_code = fragment_shader_stream.str();
-
-    return Shader(vertex_shader_code.c_str(), fragment_shader_code.c_str());
-}
-
-Texture LoadTexture(std::string path) {
-    int img_width, img_height, img_nr_channels;
-    unsigned char *data = stbi_load(path.c_str(), &img_width, &img_height, &img_nr_channels, 0);
-    if (!data) {
-        DEBUG_STDOUT("Texture load failed\n");
-    }
-    DEBUG_STDOUT("Texture loaded : %d %d %d\n", img_width, img_height, img_nr_channels);
-    DEBUG_STDOUT("    First four bytes : %x %x %x %x\n", data[0], data[1], data[2], data[3]);
-
-    GLenum format = GL_RGB;
-    if (img_nr_channels == 3) {
-        format = GL_RGB;
-    } else if (img_nr_channels == 4) {
-        format = GL_RGBA;
-    } else {
-        DEBUG_STDOUT("Unexpected image channels : %d\n", img_nr_channels);
-    }
-    glPixelStorei(GL_UNPACK_ALIGNMENT, img_nr_channels);
-
-    Texture texture(img_width, img_height, img_nr_channels, data, format, format);
-
-    stbi_image_free(data);
-
-    return texture;
 }
 
 int main() {
@@ -342,37 +270,6 @@ int main() {
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
     ));
 
-    {
-        /*
-        std::vector<float> vertices = {
-            -1.0f, 0.0f, 0.0f, 
-             1.0f, 0.0f, 0.0f, 
-             0.0f, 1.0f, 0.0f, 
-        };
-        std::vector<float> tex_coords = {
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            0.5f, 0.0f,
-        };
-        std::vector<float> something_else = {
-            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
-            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
-            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
-        };
-        std::vector<unsigned int> indices = {
-            0, 1, 2,
-        };
-
-        test_mesh = std::make_unique<
-            _Mesh<
-                Vbo<float, 3>,
-                Vbo<float, 2>,
-                Vbo<float, 3, 3>
-            >
-        >(indices, vertices, tex_coords, something_else);
-        */
-    }
-
     tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
     gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
 
@@ -383,15 +280,8 @@ int main() {
             500, 200
         },
         gui_tex.get(),
-        10
+        16
     ));
-
-    FontLibrary font_library;
-    FontFace font_face = font_library.NewFontFace(
-        "/res/D2Coding-Ver1.3.2-20180524-all.ttc"
-        // "/res/NanumGothic.ttf"
-    );
-    font_renderer = std::make_unique<FontRenderer>(font_face);
 
     shader = std::make_unique<Shader>(LoadShader(
         "/res/vert.glsl",

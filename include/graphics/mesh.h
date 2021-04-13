@@ -219,4 +219,35 @@ private:
 };
 */
 
+/*
+    {
+        std::vector<float> vertices = {
+            -1.0f, 0.0f, 0.0f, 
+             1.0f, 0.0f, 0.0f, 
+             0.0f, 1.0f, 0.0f, 
+        };
+        std::vector<float> tex_coords = {
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+            0.5f, 0.0f,
+        };
+        std::vector<float> something_else = {
+            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
+            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
+            0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 0.0f, 
+        };
+        std::vector<unsigned int> indices = {
+            0, 1, 2,
+        };
+
+        test_mesh = std::make_unique<
+            _Mesh<
+                Vbo<float, 3>,
+                Vbo<float, 2>,
+                Vbo<float, 3, 3>
+            >
+        >(indices, vertices, tex_coords, something_else);
+    }
+ */
+
 #endif
