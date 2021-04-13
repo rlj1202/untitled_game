@@ -116,5 +116,45 @@ void Mesh::Bind() {
 }
 
 void Mesh::Draw() {
+    Bind();
     glDrawElements(GL_TRIANGLES, cnt_vertices, GL_UNSIGNED_INT, 0);
+}
+
+Buffer::Buffer(unsigned int target, unsigned int usage)
+    : target(target), usage(usage) {
+    glGenBuffers(1, &buffer_id);
+}
+
+Buffer::Buffer(Buffer &&o) {
+    this->target = o.target;
+    this->usage = o.usage;
+
+    this->buffer_id = o.buffer_id;
+    o.buffer_id = 0;
+}
+
+Buffer::~Buffer() {
+    if (buffer_id) {
+        glDeleteBuffers(1, &buffer_id);
+        buffer_id = 0;
+    }
+}
+
+Buffer& Buffer::operator=(Buffer &&o) noexcept {
+    this->target = o.target;
+    this->usage = o.usage;
+
+    this->buffer_id = o.buffer_id;
+    o.buffer_id = 0;
+
+    return *this;
+}
+
+void Buffer::Bind() {
+    glBindBuffer(target, buffer_id);
+}
+
+void Buffer::SetData(size_t size, const void *data) {
+    Bind();
+    glBufferData(target, size, data, usage);
 }

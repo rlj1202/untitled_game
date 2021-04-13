@@ -43,6 +43,7 @@
 #include "graphics/mesh.h"
 #include "graphics/mesh_builder.h"
 #include "graphics/font.h"
+#include "graphics/gui.h"
 #include "chunk.h"
 
 using json = nlohmann::json;
@@ -57,13 +58,15 @@ GLFWwindow* window;
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Mesh>   mesh;
 std::unique_ptr<Mesh>   quad_mesh;
-std::unique_ptr<Mesh>   gui_mesh;
-std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
+// std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
 
 std::unique_ptr<Texture> tex;
 std::unique_ptr<Texture> gui_tex;
 
 std::unique_ptr<FontRenderer> font_renderer;
+
+std::unique_ptr<Canvas>          canvas;
+std::unique_ptr<GuiSimpleLayout> simple_gui;
 
 float camera_x;
 float camera_y;
@@ -73,6 +76,8 @@ float camera_scale = 100.0f;
 double previous_time;
 int frame_count;
 double elapsed_time_sum;
+
+glm::vec2 prev_cursor_pos;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int modifier) {
     // DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
@@ -97,7 +102,31 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
 }
 
 void mousebutton_callback(GLFWwindow *window, int button, int action, int mods) {
-    DEBUG_STDOUT("mouse : %d %d %d\n", button, action, mods);
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+
+    DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
+
+    if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
+        prev_cursor_pos = glm::vec2(xpos, ypos);
+    }
+}
+
+void cursorpos_callback(GLFWwindow *window, double xpos, double ypos) {
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+        glm::vec2 cur_pos(xpos, ypos);
+        glm::vec2 delta = cur_pos - prev_cursor_pos;
+
+        DEBUG_STDOUT("mouse : %f %f\n", delta.x, delta.y);
+
+        GuiArea& area = simple_gui->GetArea();
+        if (area.IsIn(cur_pos)) {
+            area.x += (int) delta.x;
+            area.y += (int) delta.y;
+        }
+
+        prev_cursor_pos = cur_pos;
+    }
 }
 
 void mainLoop() {
@@ -123,6 +152,20 @@ void mainLoop() {
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera_y +=  speed;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera_y += -speed;
 
+    // Render world
+    glm::mat4 proj = glm::ortho(
+        -width / 2.0f, width / 2.0f,
+        -height / 2.0f, height / 2.0f,
+        -0.1f, 100.0f);
+    glm::mat4 model(1);
+    glm::mat4 tex_transform(1);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    tex_transform = glm::scale(tex_transform, glm::vec3(1.0f, 1.0f, 1.0f));
+
+    shader->SetUniformMat4("projection", proj);
+    shader->SetUniformMat4("model", model);
+    shader->SetUniformMat4("tex_transform", tex_transform);
+
     glm::mat4 view(1);
     view = glm::scale(view, glm::vec3(camera_scale, camera_scale, 0));
     view = glm::translate(view, glm::vec3(-camera_x, -camera_y, 0.0f));
@@ -133,19 +176,26 @@ void mainLoop() {
     mesh->Bind();
     mesh->Draw();
 
-    tex->Bind();
-    test_mesh->Bind();
-    test_mesh->Draw();
+    // Render gui
+    glm::mat4 gui_proj = glm::ortho(
+        0.0f, (float) width,
+        (float) height, 0.0f,
+        -0.1f, 100.0f
+    );
+    glm::mat4 gui_view(1);
+
+    shader->SetUniformMat4("projection", gui_proj);
+    shader->SetUniformMat4("view", gui_view);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glm::mat4 font_view(1);
-    shader->SetUniformMat4("view", font_view);
-
-    gui_tex->Bind();
-    gui_mesh->Bind();
-    gui_mesh->Draw();
+    canvas->Clear();
+    {
+        gui_tex->Bind();
+        simple_gui->Draw(*canvas, GuiArea{0, 0, 0, 0});
+    }
+    canvas->Render();
 
     std::wstring strs[] = {
         L"안녕하세요! 한글 렌더링 테스트입니다. Hello, world!",
@@ -157,13 +207,13 @@ void mainLoop() {
         L"많은 글 글 글...",
         L"많은 글 글 글...",
     };
-    int cur_x = -width/2.0f + 10;
-    int cur_y = height/2.0f - 10 - 16;
+    int cur_x = 20;
+    int cur_y = 20 + 16;
     for (int i = 0; i < 8; i++) {
         font_renderer->Render(
             cur_x, cur_y, strs[i]
         );
-        cur_y -= 16 + 2;
+        cur_y += 16 + 2;
     }
     font_renderer->Flush();
     glDisable(GL_BLEND);
@@ -255,6 +305,7 @@ int main() {
     glfwSetKeyCallback(window, key_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetMouseButtonCallback(window, mousebutton_callback);
+    glfwSetCursorPosCallback(window, cursorpos_callback);
 
     Chunk chunk;
 
@@ -290,17 +341,9 @@ int main() {
             .Translate(glm::vec3(-0.5f, -0.5f, 0.0f))
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
     ));
-    gui_mesh = std::make_unique<Mesh>(BuildMesh(
-        meshprofile_quad
-            .Scale(glm::vec3(100.0f, 100.0f, 0.0f))
-            .Translate(glm::vec3(
-                -width/2.0f + 10.0f,
-                -height/2.0f + 10.0f,
-                0.0f)
-            )
-    ));
 
     {
+        /*
         std::vector<float> vertices = {
             -1.0f, 0.0f, 0.0f, 
              1.0f, 0.0f, 0.0f, 
@@ -327,10 +370,21 @@ int main() {
                 Vbo<float, 3, 3>
             >
         >(indices, vertices, tex_coords, something_else);
+        */
     }
 
     tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
     gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
+
+    canvas = std::make_unique<Canvas>();
+    simple_gui = std::make_unique<GuiSimpleLayout>(GuiSimpleLayout(
+        GuiArea{
+            10, 10,
+            500, 200
+        },
+        gui_tex.get(),
+        10
+    ));
 
     FontLibrary font_library;
     FontFace font_face = font_library.NewFontFace(
@@ -344,21 +398,6 @@ int main() {
         "/res/frag.glsl"
     ));
     shader->Use();
-
-
-    glm::mat4 proj = glm::ortho(
-        -width / 2.0f, width / 2.0f,
-        -height / 2.0f, height / 2.0f,
-        -0.1f, 100.0f);
-    glm::mat4 model(1);
-    glm::mat4 tex_transform(1);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    tex_transform = glm::scale(tex_transform, glm::vec3(1.0f, 1.0f, 1.0f));
-    // tex_transform = glm::translate(tex_transform, glm::vec3(4 / 16.0f, 0 / 16.0f, 0.0f));
-
-    shader->SetUniformMat4("projection", proj);
-    shader->SetUniformMat4("model", model);
-    shader->SetUniformMat4("tex_transform", tex_transform);
 
 #ifdef EMSCRIPTEN
     emscripten_set_main_loop(&mainLoop, 0, 1);

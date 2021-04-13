@@ -57,11 +57,47 @@ private:
     unsigned int cnt_vertices;
 };
 
+class Buffer {
+public:
+    Buffer(unsigned int target, unsigned int usage);
+    Buffer(const Buffer &o) = delete;
+    Buffer(Buffer &&o);
+    ~Buffer();
 
+    Buffer& operator=(const Buffer &o) = delete;
+    Buffer& operator=(Buffer &&o) noexcept;
 
+    void Bind();
+    void SetData(size_t size, const void *data);
 
+private:
+    unsigned int target;
+    unsigned int usage;
 
+    unsigned int buffer_id;
+};
 
+class _Mesh {
+public:
+    _Mesh();
+    _Mesh(const _Mesh &o) = delete;
+    _Mesh(_Mesh &&o);
+    ~_Mesh();
+
+    _Mesh& operator=(const _Mesh &o) = delete;
+    _Mesh& operator=(_Mesh &&o);
+
+    void Bind();
+    void Draw();
+
+private:
+    unsigned int vao_id;
+
+    unsigned int ebo_id;
+    unsigned int num_indices;
+};
+
+/*
 template<typename Datatype, int... Ptrs>
 class Vbo {
 };
@@ -181,5 +217,6 @@ private:
 
     VboIter<Vbos...> vbo_iter;
 };
+*/
 
 #endif

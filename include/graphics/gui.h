@@ -3,37 +3,50 @@
 
 #include <vector>
 
+#include "graphics/mesh.h"
+#include "graphics/texture.h"
+#include "graphics/canvas.h"
+
 class GuiArea {
 public:
-    int x, y, width, height;
+    int x, y;
+    int width, height;
+
+    bool IsIn(const glm::vec2 pos);
 };
 
 class IGuiNode {
 public:
-    void AppendChild(IGuiNode* child);
+    virtual GuiArea Draw(Canvas& canvas, GuiArea area) = 0;
+};
 
-    virtual GuiArea Draw(GuiArea area) = 0;
+class IGuiLayout : public IGuiNode {
+public:
+    void AppendChild(IGuiNode* node);
 
 protected:
     std::vector<IGuiNode*> children;
 };
 
-class GuiSimpleLayout : public IGuiNode {
-    void AppendChild(int x, int y, IGuiNode* child) {
+class GuiSimpleLayout : public IGuiLayout {
+public:
+    GuiSimpleLayout(GuiArea area, Texture* texture, int corner);
+    GuiSimpleLayout(const GuiSimpleLayout &o) = delete;
+    GuiSimpleLayout(GuiSimpleLayout &&o) = default;
+    ~GuiSimpleLayout() = default;
 
-    }
-};
+    GuiSimpleLayout& operator=(const GuiSimpleLayout &o) = delete;
+    GuiSimpleLayout& operator=(GuiSimpleLayout &&o) = default;
 
-class GuiVerticalLayout : public IGuiNode {
-    virtual GuiArea Draw(GuiArea area) override {
+    GuiArea Draw(Canvas& canvas, GuiArea area) override;
+    GuiArea& GetArea();
 
+private:
+    GuiArea area;
 
-        for (auto child : children) {
-            child->Draw(area);
-        }
+    Texture* texture;
 
-        return area;
-    }
+    int corner;
 };
 
 #endif

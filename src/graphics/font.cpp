@@ -122,8 +122,8 @@ FontRenderer::FontRenderer(FontFace face) : face(face) {
     std::vector<Vertex> vertices = {
         Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
         Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+        Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
     };
     std::vector<unsigned int> indices = {
         0, 1, 2,
@@ -153,7 +153,7 @@ void FontRenderer::Render(int x, int y, std::wstring text) {
                 .Scale(glm::vec3(info.width, info.height, 0))
                 .Translate(glm::vec3(
                     x + info.bearing_x + cur_x,
-                    y - (int) info.height + info.bearing_y,
+                    y + (int) info.height - info.bearing_y,
                     0.0f
                 ))
                 .TexScale(glm::vec2(
@@ -178,7 +178,6 @@ void FontRenderer::Flush() {
     Mesh mesh = BuildMesh(profile);
 
     texture_atlas->Bind();
-    mesh.Bind();
     mesh.Draw();
 
     profile = MeshProfile();

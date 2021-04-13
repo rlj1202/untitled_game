@@ -8,7 +8,7 @@
 	
 [submodule "libs/stb"]
 	path = libs/stb
-	url = https://github.com/stb/stb
+	url = https://github.com/nothings/stb
 
 [submodule "libs/pugixml"]
 	path = libs/pugixml
