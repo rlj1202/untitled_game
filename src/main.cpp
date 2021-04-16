@@ -68,6 +68,38 @@ double elapsed_time_sum;
 glm::vec2 prev_cursor_pos;
 int prev_cursor_button;
 
+bool recurMouseButtonEvent(IGuiNode* node, glm::vec2 pos, int button, int action, int modifiers) {
+    if (node->GetAbsoluteArea().IsIn(pos)) {
+        if (node->OnMouseButton(pos, button, action, modifiers)) {
+            return true;
+        }
+    }
+
+    for (auto& child : node->GetChildren()) {
+        if (recurMouseButtonEvent(child.get(), pos, button, action, modifiers)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool recurMouseDragEvent(IGuiNode* node, glm::vec2 pos, glm::vec2 rel, int button, int modifiers) {
+    if (node->GetAbsoluteArea().IsIn(pos)) {
+        if (node->OnMouseDrag(pos, rel, button, modifiers)) {
+            return true;
+        }
+    }
+
+    for (auto& child : node->GetChildren()) {
+        if (recurMouseDragEvent(child.get(), pos, rel, button, modifiers)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int modifier) {
     // DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
     // DEBUG_STDOUT("camera : %f %f\n", camera_x, camera_y);
@@ -97,9 +129,7 @@ void mousebutton_callback(GLFWwindow *window, int button, int action, int mods) 
 
     DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
 
-    if (root_gui->GetArea().IsIn(cur_pos)) {
-        root_gui->OnMouseButton(cur_pos, button, action, mods);
-    }
+    recurMouseButtonEvent(root_gui.get(), cur_pos, button, action, mods);
 
     if (action == GLFW_PRESS) {
         prev_cursor_pos = cur_pos;
@@ -112,11 +142,18 @@ void cursorpos_callback(GLFWwindow *window, double xpos, double ypos) {
         glm::vec2 cur_pos(xpos, ypos);
         glm::vec2 delta = cur_pos - prev_cursor_pos;
 
-        if (root_gui->GetArea().IsIn(cur_pos)) {
-            root_gui->OnMouseDrag(cur_pos, delta, prev_cursor_button, 0);
-        }
+        recurMouseDragEvent(root_gui.get(), cur_pos, delta, prev_cursor_button, 0);
 
         prev_cursor_pos = cur_pos;
+    }
+}
+
+void renderGui(Canvas& canvas, IGuiNode* node) {
+    node->Draw(canvas);
+    canvas.Flush();
+
+    for (auto& child : node->GetChildren()) {
+        renderGui(canvas, child.get());
     }
 }
 
@@ -125,9 +162,13 @@ void mainLoop() {
     frame_count++;
 
     if (current_time - previous_time >= 1.0) {
-        DEBUG_STDOUT("FPS : %d, avg elapsed time : %.2f ms\n",
+        float mem_total = GetMemoryTotal() / 1024.0f / 1024.0f;
+        float mem_usage = GetMemoryUsage() / 1024.0f / 1024.0f;
+
+        DEBUG_STDOUT("FPS : %d, avg elapsed time : %.2f ms, mem : %.1f/%.1f MB\n",
             frame_count,
-            elapsed_time_sum / frame_count * 1000.0
+            elapsed_time_sum / frame_count * 1000.0,
+            mem_usage, mem_total
         );
 
         frame_count = 0;
@@ -182,16 +223,15 @@ void mainLoop() {
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
     // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
-    {
-        root_gui->Draw(*canvas, GuiArea{0, 0, 0, 0});
-    }
+    // Draw GUI
+    renderGui(*canvas, root_gui.get());
     canvas->Flush();
 
     glDisable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
+    // glDisable(GL_DEPTH_TEST);
     // glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
     // End render gui
@@ -281,14 +321,22 @@ int main() {
     gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
 
     canvas = std::make_unique<Canvas>();
-    root_gui = std::make_unique<GuiSimpleLayout>(GuiSimpleLayout(
+    root_gui = std::make_unique<GuiWindow>(GuiWindow(
         GuiArea{
             10, 10,
             500, 200
         },
         gui_tex.get(),
-        16
+        10
     ));
+    root_gui->AppendChild(std::make_unique<GuiText>(GuiText(
+        GuiArea{10, 10, 480, 100},
+        L"안녕하세요! 한글 렌더링 테스트입니다. Hello, world! 이렇게 글씨를 마구마구 적을 수 있습니다. ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    )));
+    root_gui->AppendChild(std::make_unique<GuiButton>(GuiButton(
+        GuiArea{10, 10 + 16 + 60, 200, 30},
+        gui_tex.get(), 10
+    )));
 
     shader = std::make_unique<Shader>(LoadShader(
         "/res/vert.glsl",

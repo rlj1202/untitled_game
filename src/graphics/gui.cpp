@@ -1,5 +1,7 @@
 #include "graphics/gui.h"
 
+#include <sstream>
+
 #include "graphics/mesh_builder.h"
 
 bool GuiArea::IsIn(const glm::vec2 pos) {
@@ -7,32 +9,58 @@ bool GuiArea::IsIn(const glm::vec2 pos) {
            y <= pos.y && pos.y < y + height;
 }
 
-IGuiNode::IGuiNode(GuiArea area) : area(area) {
-
+IGuiNode::IGuiNode(GuiArea area) : IGuiNode(nullptr, area) {
 }
 
-void IGuiNode::AppendChild(IGuiNode* node) {
-    children.push_back(node);
+IGuiNode::IGuiNode(IGuiNode&& o) {
+    parent = o.parent;
+    area = o.area;
+
+    children = std::move(o.children);
 }
 
-std::vector<IGuiNode*> IGuiNode::GetChildren() {
+IGuiNode::IGuiNode(IGuiNode* parent, GuiArea area) : parent(parent), area(area) {
+}
+
+void IGuiNode::AppendChild(std::unique_ptr<IGuiNode> node) {
+    node->parent = this;
+    children.push_back(std::move(node));
+}
+
+std::vector<std::unique_ptr<IGuiNode>>& IGuiNode::GetChildren() {
     return children;
+}
+
+IGuiNode* IGuiNode::GetParent() {
+    return parent;
 }
 
 GuiArea& IGuiNode::GetArea() {
     return area;
 }
 
-GuiSimpleLayout::GuiSimpleLayout(GuiArea area, Texture* texture, int corner)
-    : IGuiNode(area), texture(texture), corner(corner) {
+GuiArea IGuiNode::GetAbsoluteArea() {
+    GuiArea result = area;
+    if (parent) {
+        GuiArea parent_area = parent->GetAbsoluteArea();
+        result.x += parent_area.x;
+        result.y += parent_area.y;
+    }
+    return result;
 }
 
-GuiArea GuiSimpleLayout::Draw(Canvas& canvas, GuiArea area) {
+GuiRect::GuiRect(GuiArea area, Texture* texture, int corner)
+    : IGuiNode(nullptr, area), texture(texture), corner(corner) {
+}
+
+void GuiRect::Draw(Canvas& canvas) {
+    GuiArea area = GetAbsoluteArea();
+
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
 
-    int x_body = this->area.width - corner * 2;
-    int y_body = this->area.height - corner * 2;
+    int x_body = area.width - corner * 2;
+    int y_body = area.height - corner * 2;
 
     for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
@@ -55,8 +83,8 @@ GuiArea GuiSimpleLayout::Draw(Canvas& canvas, GuiArea area) {
             if (r == 3) y = corner * 2 + y_body;
 
             vertices.push_back(Vertex(
-                glm::vec3(x + this->area.x, y + this->area.y, 0.0f),
-                glm::vec2(c / 3.0f, (3 - r) / 3.0f)
+                glm::vec3(x + area.x, y + area.y, 0.0f),
+                glm::vec2(c / 3.0f, r / 3.0f)
             ));
         }
     }
@@ -75,25 +103,72 @@ GuiArea GuiSimpleLayout::Draw(Canvas& canvas, GuiArea area) {
     }
 
     canvas.Draw(texture, vertices, indices);
-    canvas.Flush();
-
-    canvas.DrawText(
-        glm::vec3(
-            this->area.x + 10,
-            this->area.y + 10 + 16,
-            0.1f
-        ),
-        L"안녕하세요! 한글 렌더링 테스트입니다. Hello, world!"
-    );
-
-    return {};
 }
 
-bool GuiSimpleLayout::OnMouseDrag(glm::vec2 pos, glm::vec2 rel, int button, int modifiers) {
+GuiWindow::GuiWindow(GuiArea area, Texture* texture, int corner)
+    : GuiRect(area, texture, corner) {
+
+}
+
+bool GuiWindow::OnMouseDrag(glm::vec2 pos, glm::vec2 rel, int button, int modifiers) {
     if (button == GLFW_MOUSE_BUTTON_1) {
         area.x += rel.x;
         area.y += rel.y;
     }
+
+    return true;
+}
+
+GuiText::GuiText(GuiArea area, std::wstring text)
+    : IGuiNode(area), text(text) {
+
+}
+
+void GuiText::Draw(Canvas& canvas) {
+    GuiArea area = GetAbsoluteArea();
+
+    int line = 0;
+    int i = 0;
+    while (i < text.size()) {
+        int height = 16 + (16 + line_gap) * line;
+        if (height >= area.height) break;
+
+        int written = canvas.DrawText(
+            glm::vec3(
+                area.x,
+                area.y + height,
+                0.0f
+            ),
+            text.substr(i),
+            area.width
+        );
+
+        if (!written) break;
+
+        if (!auto_newline) break;
+        line++;
+        i += written;
+    }
+}
+
+GuiButton::GuiButton(GuiArea area, Texture* texture, int corner)
+    : GuiRect(area, texture, corner) {
+
+}
+
+void GuiButton::Draw(Canvas& canvas) {
+    GuiRect::Draw(canvas);
+
+    std::wostringstream stream;
+    stream << L"count : " << test_count;
+
+    GuiArea area = GetAbsoluteArea();
+    canvas.Flush();
+    canvas.DrawText(glm::vec3(area.x + 10, area.y + 16 + 5, 0), stream.str(), area.width);
+}
+
+bool GuiButton::OnMouseButton(glm::vec2 pos, int button, int action, int modifiers) {
+    if (action == GLFW_RELEASE) test_count++;
 
     return true;
 }

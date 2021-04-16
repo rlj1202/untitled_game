@@ -5,16 +5,6 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 project(untitled_game)
 
-if (CYGWIN)
-    message(STATUS "syswin")
-elseif (APPLE)
-    message(STATUS "apple")
-elseif (WIN32)
-    message(STATUS "win32")
-else()
-    message(STATUS "linux")
-endif()
-
 if (EMSCRIPTEN)
     message(STATUS "Emscripten")
 endif()
@@ -26,15 +16,24 @@ endif()
 
 add_subdirectory(libs)
 
-file(GLOB_RECURSE SOURCES
+file(GLOB SOURCES
     src/*.cpp
     src/graphics/*.cpp
 )
 
+if (EMSCRIPTEN)
+    file(GLOB_RECURSE PLATFORM_SOURCES src/platforms/*_webgl.cpp)
+elseif (linux)
+    file(GLOB_RECURSE PLATFORM_SOURCES src/platforms/*_linux.cpp)
+elseif (CYGWIN)
+elseif (APPLE)
+elseif (WIN32)
+endif()
+
 set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
 add_executable(${PROJECT_NAME}
-    ${SOURCES}
+    ${SOURCES} ${PLATFORM_SOURCES}
 )
 
 target_include_directories(${PROJECT_NAME}

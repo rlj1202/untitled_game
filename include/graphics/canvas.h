@@ -23,9 +23,10 @@ public:
 
     void Draw(Texture* texture, std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
     void Draw(Texture* texture, MeshProfile& profile);
-    void DrawLine();
-    void DrawRect();
-    void DrawText(glm::vec3 pos, std::wstring text);
+    void DrawLine(Texture* texture, glm::vec3 a, glm::vec3 b);
+    void DrawRect(Texture* texture, glm::vec3 pos, glm::vec2 size);
+    void DrawCircle(Texture* texture, glm::vec3 pos, float radius);
+    int DrawText(glm::vec3 pos, std::wstring text, int max_width);
 
     void Render();
     void Clear();
@@ -35,6 +36,7 @@ private:
     bool LoadGlyph(unsigned int codepoint);
 
     MeshProfile quad_profile;
+    MeshProfile font_quad_profile;
 
     std::unique_ptr<Mesh> mesh;
     std::unordered_map<Texture*, MeshProfile> mesh_profiles;

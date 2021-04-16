@@ -25,17 +25,32 @@ Canvas::Canvas() {
 
     texture_atlas->Bake();
 
-    std::vector<Vertex> vertices = {
-        Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
-        Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-    };
-    std::vector<unsigned int> indices = {
-        0, 1, 2,
-        0, 2, 3,
-    };
-    quad_profile = MeshProfile(vertices, indices, "");
+    {
+        std::vector<Vertex> vertices = {
+            Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+            Vertex(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+        };
+        std::vector<unsigned int> indices = {
+            0, 1, 2,
+            0, 2, 3,
+        };
+        font_quad_profile = MeshProfile(vertices, indices, "");
+    }
+    {
+        std::vector<Vertex> vertices = {
+            Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+            Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+        };
+        std::vector<unsigned int> indices = {
+            0, 1, 2,
+            0, 2, 3,
+        };
+        quad_profile = MeshProfile(vertices, indices, "");
+    }
 }
 
 void Canvas::Draw(Texture* texture, std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) {
@@ -46,11 +61,19 @@ void Canvas::Draw(Texture* texture, MeshProfile& profile) {
     mesh_profiles[texture].Append(profile);
 }
 
-void Canvas::DrawText(glm::vec3 pos, std::wstring text) {
+void Canvas::DrawRect(Texture* texture, glm::vec3 pos, glm::vec2 size) {
+    MeshProfile profile = quad_profile
+        .Scale(glm::vec3(size, 0.0f))
+        .Translate(pos);
+    Draw(texture, profile);
+}
+
+int Canvas::DrawText(glm::vec3 pos, std::wstring text, int max_width) {
     float cur_x = 0;
     uint32_t prev_glyph_index = 0;
 
-    for (wchar_t codepoint : text) {
+    for (int i = 0; i < text.size(); i++) {
+        wchar_t codepoint = text[i];
         if (!glyph_infos.count(codepoint)) continue;
 
         Glyph& info = glyph_infos[codepoint];
@@ -62,7 +85,11 @@ void Canvas::DrawText(glm::vec3 pos, std::wstring text) {
             cur_x += kerning.x;
         }
 
-        MeshProfile profile = quad_profile
+        if (info.bearing_x + cur_x + info.advance_x >= max_width) {
+            return i;
+        }
+
+        MeshProfile profile = font_quad_profile
             .Scale(glm::vec3(info.width, info.height, 0))
             .Translate(glm::vec3(
                 pos.x + info.bearing_x + cur_x,
@@ -85,6 +112,8 @@ void Canvas::DrawText(glm::vec3 pos, std::wstring text) {
 
         cur_x += info.advance_x;
     }
+
+    return text.size();
 }
 
 void Canvas::Render() {

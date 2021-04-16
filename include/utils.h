@@ -10,4 +10,14 @@ Shader LoadShader(std::string vertex_shader, std::string fragment_shader);
 
 Texture LoadTexture(std::string path);
 
+/**
+ * @brief Get total momory size in bytes.
+ */
+unsigned long long GetMemoryTotal();
+
+/**
+ * @brief Get current memory usage in bytes.
+ */
+unsigned long long GetMemoryUsage();
+
 #endif
