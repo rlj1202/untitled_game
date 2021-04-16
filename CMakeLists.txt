@@ -45,16 +45,19 @@ target_include_directories(${PROJECT_NAME}
         ${PROJECT_SOURCE_DIR}/libs/glm
 )
 
-set_target_properties(${PROJECT_NAME}
-    PROPERTIES LINK_FLAGS "\
-                          -s USE_WEBGL2=1 \
-                          -s FULL_ES3=1 \
-                          -s USE_GLFW=3 \
-                          -s WASM=1 \
-                          -s ALLOW_MEMORY_GROWTH=1 \
-                          --preload-file ${PROJECT_SOURCE_DIR}/res@/res \
-                          "
+if (EMSCRIPTEN)
+    set_target_properties(${PROJECT_NAME}
+        PROPERTIES LINK_FLAGS "\
+                              -s USE_WEBGL2=1 \
+                              -s FULL_ES3=1 \
+                              -s USE_GLFW=3 \
+                              -s WASM=1 \
+                              -s ALLOW_MEMORY_GROWTH=1 \
+                              -lopenal \
+                              --preload-file ${PROJECT_SOURCE_DIR}/res@/res \
+                              "
 )
+endif()
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE glm
