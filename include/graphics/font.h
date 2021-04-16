@@ -26,12 +26,9 @@ struct Glyph {
 };
 
 class FontFace {
-    friend class FontLibrary;
-    friend class FontRenderer;
-private:
+public:
     FontFace(FT_Face ft_face);
 
-public:
     void SetPixelSize(int width, int height);
 
     unsigned int GetCharIndex(unsigned long codepoint);
@@ -42,13 +39,10 @@ public:
 
     bool RenderGlyph();
 
-private:
     FT_Face ft_face;
 };
 
 class FontLibrary {
-public:
-
 public:
     FontLibrary();
     FontLibrary(const FontLibrary &o) = delete;
@@ -58,26 +52,6 @@ public:
 
 private:
     FT_Library ft_library;
-};
-
-class FontRenderer {
-public:
-    FontRenderer(FontFace face);
-
-    void Render(int x, int y, std::wstring text);
-    void Flush();
-
-    Texture* GetTexture();
-
-private:
-    bool LoadGlyph(unsigned int codepoint);
-
-    FontFace face;
-    std::unordered_map<unsigned int, Glyph> glyph_infos;
-
-    MeshProfile quad_profile;
-    MeshProfile profile;
-    std::unique_ptr<TextureAtlas> texture_atlas;
 };
 
 #endif

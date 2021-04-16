@@ -135,7 +135,7 @@ void mainLoop() {
         elapsed_time_sum = 0;
     }
 
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     float speed = 0.05f;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera_x += -speed;
@@ -147,7 +147,7 @@ void mainLoop() {
     glm::mat4 proj = glm::ortho(
         -width / 2.0f, width / 2.0f,
         -height / 2.0f, height / 2.0f,
-        -0.1f, 100.0f);
+        -1.0f, 100.0f);
     glm::mat4 model(1);
     glm::mat4 tex_transform(1);
     glm::mat4 view(1);
@@ -182,14 +182,17 @@ void mainLoop() {
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
-    canvas->Clear();
     {
         root_gui->Draw(*canvas, GuiArea{0, 0, 0, 0});
     }
-    canvas->Render();
+    canvas->Flush();
 
     glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    // glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
     // End render gui
 
