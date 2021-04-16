@@ -17,20 +17,28 @@ public:
 
 class IGuiNode {
 public:
+    IGuiNode(GuiArea area);
+    virtual ~IGuiNode() = default;
+
+    void AppendChild(IGuiNode* node);
+    std::vector<IGuiNode*> GetChildren();
+
+    GuiArea& GetArea();
+
     virtual GuiArea Draw(Canvas& canvas, GuiArea area) = 0;
 
-    virtual bool OnMouseClick(glm::vec2 pos) { return false; }
-};
-
-class IGuiLayout : public IGuiNode {
-public:
-    void AppendChild(IGuiNode* node);
+    virtual bool OnKeyboard(int code, int key, int action, int modifiers) { return false; }
+    virtual bool OnMouseDrag(glm::vec2 pos, glm::vec2 rel, int button, int modifiers) { return false; }
+    virtual bool OnMouseButton(glm::vec2 pos, int button, int action, int modifiers) { return false; }
+    virtual bool OnScroll(float x, float y) { return false; }
 
 protected:
+    GuiArea area;
+
     std::vector<IGuiNode*> children;
 };
 
-class GuiSimpleLayout : public IGuiLayout {
+class GuiSimpleLayout : public IGuiNode {
 public:
     GuiSimpleLayout(GuiArea area, Texture* texture, int corner);
     GuiSimpleLayout(const GuiSimpleLayout &o) = delete;
@@ -41,11 +49,10 @@ public:
     GuiSimpleLayout& operator=(GuiSimpleLayout &&o) = default;
 
     GuiArea Draw(Canvas& canvas, GuiArea area) override;
-    GuiArea& GetArea();
+
+    bool OnMouseDrag(glm::vec2 pos, glm::vec2 rel, int button, int modifiers) override;
 
 private:
-    GuiArea area;
-
     Texture* texture;
 
     int corner;

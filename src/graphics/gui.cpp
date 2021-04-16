@@ -7,12 +7,24 @@ bool GuiArea::IsIn(const glm::vec2 pos) {
            y <= pos.y && pos.y < y + height;
 }
 
-void IGuiLayout::AppendChild(IGuiNode* node) {
+IGuiNode::IGuiNode(GuiArea area) : area(area) {
+
+}
+
+void IGuiNode::AppendChild(IGuiNode* node) {
     children.push_back(node);
 }
 
+std::vector<IGuiNode*> IGuiNode::GetChildren() {
+    return children;
+}
+
+GuiArea& IGuiNode::GetArea() {
+    return area;
+}
+
 GuiSimpleLayout::GuiSimpleLayout(GuiArea area, Texture* texture, int corner)
-    : area(area), texture(texture), corner(corner) {
+    : IGuiNode(area), texture(texture), corner(corner) {
 }
 
 GuiArea GuiSimpleLayout::Draw(Canvas& canvas, GuiArea area) {
@@ -72,6 +84,11 @@ GuiArea GuiSimpleLayout::Draw(Canvas& canvas, GuiArea area) {
     return {};
 }
 
-GuiArea& GuiSimpleLayout::GetArea() {
-    return area;
+bool GuiSimpleLayout::OnMouseDrag(glm::vec2 pos, glm::vec2 rel, int button, int modifiers) {
+    if (button == GLFW_MOUSE_BUTTON_1) {
+        area.x += rel.x;
+        area.y += rel.y;
+    }
+
+    return true;
 }

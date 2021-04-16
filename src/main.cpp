@@ -53,8 +53,8 @@ std::unique_ptr<Mesh>   quad_mesh;
 std::unique_ptr<Texture> tex;
 std::unique_ptr<Texture> gui_tex;
 
-std::unique_ptr<Canvas>          canvas;
-std::unique_ptr<GuiSimpleLayout> simple_gui;
+std::unique_ptr<Canvas>   canvas;
+std::unique_ptr<IGuiNode> root_gui;
 
 float camera_x;
 float camera_y;
@@ -66,6 +66,7 @@ int frame_count;
 double elapsed_time_sum;
 
 glm::vec2 prev_cursor_pos;
+int prev_cursor_button;
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int modifier) {
     // DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
@@ -92,23 +93,27 @@ void scroll_callback(GLFWwindow *window, double x, double y) {
 void mousebutton_callback(GLFWwindow *window, int button, int action, int mods) {
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
+    glm::vec2 cur_pos(xpos, ypos);
 
     DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
 
-    if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
-        prev_cursor_pos = glm::vec2(xpos, ypos);
+    if (root_gui->GetArea().IsIn(cur_pos)) {
+        root_gui->OnMouseButton(cur_pos, button, action, mods);
+    }
+
+    if (action == GLFW_PRESS) {
+        prev_cursor_pos = cur_pos;
+        prev_cursor_button = button;
     }
 }
 
 void cursorpos_callback(GLFWwindow *window, double xpos, double ypos) {
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+    if (glfwGetMouseButton(window, prev_cursor_button) == GLFW_PRESS) {
         glm::vec2 cur_pos(xpos, ypos);
         glm::vec2 delta = cur_pos - prev_cursor_pos;
 
-        GuiArea& area = simple_gui->GetArea();
-        if (area.IsIn(cur_pos)) {
-            area.x += (int) delta.x;
-            area.y += (int) delta.y;
+        if (root_gui->GetArea().IsIn(cur_pos)) {
+            root_gui->OnMouseDrag(cur_pos, delta, prev_cursor_button, 0);
         }
 
         prev_cursor_pos = cur_pos;
@@ -180,8 +185,7 @@ void mainLoop() {
 
     canvas->Clear();
     {
-        gui_tex->Bind();
-        simple_gui->Draw(*canvas, GuiArea{0, 0, 0, 0});
+        root_gui->Draw(*canvas, GuiArea{0, 0, 0, 0});
     }
     canvas->Render();
 
@@ -274,7 +278,7 @@ int main() {
     gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
 
     canvas = std::make_unique<Canvas>();
-    simple_gui = std::make_unique<GuiSimpleLayout>(GuiSimpleLayout(
+    root_gui = std::make_unique<GuiSimpleLayout>(GuiSimpleLayout(
         GuiArea{
             10, 10,
             500, 200
