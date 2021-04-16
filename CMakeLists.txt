@@ -14,7 +14,10 @@ if (NOT EMSCRIPTEN)
     find_package(OpenGL REQUIRED)
 endif()
 
+enable_testing()
+
 add_subdirectory(libs)
+add_subdirectory(test)
 
 file(GLOB SOURCES
     src/*.cpp
