@@ -10,16 +10,24 @@
 
 #include <GLES3/gl3.h>
 
+#include "rect_pack.h"
+
+/**
+ * Opengl texture wrapper class.
+ */
 class Texture {
 public:
     Texture(
         unsigned int width, unsigned int height, unsigned int channels,
-        unsigned char *data,
+        unsigned char* data,
         GLenum internal_format, GLenum format
     );
-    Texture(const Texture &o) = delete;
+    Texture(const Texture& o) = delete;
     Texture(Texture&& o);
     ~Texture();
+
+    Texture& operator=(const Texture& o) = delete;
+    Texture& operator=(Texture&& o);
 
     unsigned int GetWidth();
     unsigned int GetHeight();
@@ -29,7 +37,7 @@ public:
     void SetData(
         unsigned int x, unsigned int y,
         unsigned int width, unsigned int height,
-        unsigned char *data
+        unsigned char* data
     );
 
     /**
@@ -39,12 +47,13 @@ public:
 
     void Bind(unsigned int active = 0);
     void Unbind(unsigned int active = 0);
+    
 private:
     unsigned int width;
     unsigned int height;
 
     unsigned int channels;
-    unsigned char *data;
+    unsigned char* data;
 
     GLenum internal_format;
     GLenum format;
@@ -61,47 +70,43 @@ public:
     glm::ivec2 size;
 };
 
-struct TextureAtlasNode {
-    int x, y;
-    TextureAtlasNode *next, *prev;
-
-    TextureAtlasNode();
-    TextureAtlasNode(int x, int y, TextureAtlasNode *prev);
-    ~TextureAtlasNode();
-};
-
 /**
- * Based on The Skyline Bottom-Left Algorithm. (Skyline BL)
+ * Special texture class which can store diffent types of textures together.
  */
 class TextureAtlas : public Texture {
 public:
     TextureAtlas(
         unsigned int width, unsigned int height, unsigned int channels,
-        unsigned char *data,
+        unsigned char* data,
         GLenum internal_format, GLenum format
     );
     TextureAtlas(
         unsigned int width, unsigned int height, unsigned int channels,
-        unsigned char *data,
+        unsigned char* data,
         GLenum internal_format, GLenum format,
-        const std::vector<TextureBound> &bounds
+        const std::vector<TextureBound>& bounds
     );
-    TextureAtlas(TextureAtlas &&o);
-    ~TextureAtlas();
 
     /**
-     * Find appropriate place given width and height.
-     * Returns corner of rect.
+     * @brief Find appropriate place given width and height.
+     * 
+     * @return Coordinates of corner of area where the given area is placed.
      */
-    glm::ivec2 Claim(int width, int height);
+    glm::ivec2 Claim(unsigned int width, unsigned int height);
+
+    glm::ivec2 Claim(unsigned int width, unsigned int height, std::string name);
+
+    /**
+     * @brief Add data into appropriate place.
+     * 
+     * @return Coordinates of corner of area where the given data is drawn into.
+     */
+    glm::ivec2 AddData(unsigned int width, unsigned height, unsigned char* data);
 
     glm::mat4 GetTextureTransformMatrix(const std::string name);
 
 private:
-    glm::ivec2 FindBottomLeft(int width, int height, TextureAtlasNode **best_node);
-    int FindMinY(TextureAtlasNode *node, int width);
-
-    TextureAtlasNode *head;
+    RectPack rect_pack;
 
     std::vector<TextureBound> bounds;
 

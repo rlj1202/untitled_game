@@ -23,6 +23,10 @@ RectPack::Node::~Node() {
 RectPack::RectPack(unsigned int width, unsigned int height) : width(width), height(height) {
     head = new RectPack::Node(0, 0, nullptr, nullptr);
     head->next = new RectPack::Node(0, 0, head, nullptr);
+
+    assert(head);
+    assert(head->next);
+    assert(head->next->prev);
 }
 
 RectPack::RectPack(RectPack &&o) {
@@ -38,6 +42,16 @@ RectPack::~RectPack() {
         delete head;
         head = nullptr;
     }
+}
+
+RectPack& RectPack::operator=(RectPack&& o) {
+    width = o.width;
+    height = o.height;
+
+    head = o.head;
+    o.head = nullptr;
+
+    return *this;
 }
 
 glm::ivec2 RectPack::Claim(unsigned int width, unsigned int height) {
@@ -62,7 +76,7 @@ glm::ivec2 RectPack::Claim(unsigned int width, unsigned int height) {
             if (right >= new_node->x + width) {
                 break;
             }
-            DEBUG_STDOUT("delete node : (%d %d), right = %d\n", cur->x, cur->y, right);
+            // DEBUG_STDOUT("delete node : (%d %d), right = %d\n", cur->x, cur->y, right);
             Node *next = cur->next;
             cur->next = nullptr;
             cur->prev = nullptr;
@@ -114,8 +128,8 @@ glm::ivec2 RectPack::FindBottomLeft(unsigned int width, unsigned int height, Nod
         cur = cur->next;
     }
 
-    DEBUG_STDOUT("FindBottomLeft: (%d %d)\n", width, height);
-    if (*best_node) DEBUG_STDOUT("\t(%d %d)\n", (*best_node)->x, (*best_node)->y);
+    // DEBUG_STDOUT("FindBottomLeft: (%d %d)\n", width, height);
+    // if (*best_node) DEBUG_STDOUT("\t(%d %d)\n", (*best_node)->x, (*best_node)->y);
 
     if (*best_node) return {(*best_node)->x, best_y};
     else return {-1, -1};

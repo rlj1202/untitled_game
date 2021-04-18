@@ -70,6 +70,24 @@ Texture::~Texture() {
     }
 }
 
+Texture& Texture::operator=(Texture&& o) {
+    width = o.width;
+    height = o.height;
+
+    channels = o.channels;
+    data = o.data;
+
+    internal_format = o.internal_format;
+    format = o.format;
+
+    texture_id = o.texture_id;
+
+    o.data = nullptr;
+    o.texture_id = 0;
+
+    return *this;
+}
+
 unsigned int Texture::GetWidth() {
     return width;
 }
@@ -126,19 +144,6 @@ void Texture::Unbind(unsigned int active) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-TextureAtlasNode::TextureAtlasNode() : TextureAtlasNode(0, 0, nullptr) {
-}
-TextureAtlasNode::TextureAtlasNode(int x, int y, TextureAtlasNode *prev)
-    : x(x), y(y), next(nullptr), prev(prev) {
-}
-TextureAtlasNode::~TextureAtlasNode() {
-    if (next) {
-        delete next;
-        next = nullptr;
-    }
-    prev = nullptr;
-}
-
 TextureAtlas::TextureAtlas(
         unsigned int width, unsigned int height, unsigned int channels,
         unsigned char *data,
@@ -151,14 +156,10 @@ TextureAtlas::TextureAtlas(
         unsigned char *data,
         GLenum internal_format, GLenum format,
         const std::vector<TextureBound> &bounds
-) : Texture(width, height, channels, data, internal_format, format), bounds(bounds) {
-    head = new TextureAtlasNode();
-    head->next = new TextureAtlasNode(0, 0, head);
-
-    assert(head);
-    assert(head->next);
-    assert(head->next->prev);
-
+) : Texture(width, height, channels, data, internal_format, format),
+    bounds(bounds),
+    rect_pack(width, height)
+{
     for (const TextureBound &bound : bounds) {
         glm::mat4 mat(1);
         mat = glm::scale(mat, glm::vec3(bound.size.s, bound.size.t, 1));
@@ -166,130 +167,27 @@ TextureAtlas::TextureAtlas(
         mats[bound.name] = mat;
     }
 }
-TextureAtlas::TextureAtlas(TextureAtlas &&o) : Texture(std::move(o)) {
-    head = o.head;
-    bounds = o.bounds;
-    mats = o.mats;
 
-    o.head = nullptr;
-
-    DEBUG_STDOUT("TextureAtlas moved\n");
-}
-TextureAtlas::~TextureAtlas() {
-    if (head) {
-        delete head;
-        head = nullptr;
-    }
-
-    DEBUG_STDOUT("TextureAtlas destructed\n");
+glm::ivec2 TextureAtlas::Claim(unsigned int width, unsigned int height) {
+    return rect_pack.Claim(width, height);
 }
 
-glm::ivec2 TextureAtlas::Claim(int width, int height) {
-    assert(width <= this->GetWidth());
-    assert(height <= this->GetHeight());
-    
-    TextureAtlasNode *best_node = nullptr;
-    glm::ivec2 result = FindBottomLeft(width, height, &best_node);
+glm::ivec2 TextureAtlas::Claim(unsigned int width, unsigned int height, std::string name) {
+    glm::ivec2 pos = rect_pack.Claim(width, height);
 
-    if (best_node && result.y + height <= this->GetHeight()) {
-        TextureAtlasNode *new_node = new TextureAtlasNode(result.x, result.y + height, nullptr);
-        assert(new_node);
+    // TODO: Do something with given name.
 
-        TextureAtlasNode *prev = best_node->prev;
-        assert(prev);
-        prev->next = new_node;
-        new_node->prev = prev;
-        
-        TextureAtlasNode *cur = best_node;
-        while (cur) {
-            int right = cur->next ? cur->next->x : this->GetWidth();
-            if (right >= new_node->x + width) {
-                break;
-            }
-            // DEBUG_STDOUT("delete node : (%d %d), right = %d\n", cur->x, cur->y, right);
-            TextureAtlasNode *next = cur->next;
-            cur->next = nullptr;
-            cur->prev = nullptr;
-            delete cur;
-            cur = next;
-        }
-
-        new_node->next = cur;
-        if (cur) cur->prev = new_node;
-
-        if (cur) cur->x = new_node->x + width;
-
-        return result;
-    }
-
-    // TextureAtlasNode *test = head->next;
-    // int chain_length = 0;
-    // while (test) {
-    //     chain_length++;
-    //     test = test->next;
-    // }
-    // DEBUG_STDOUT("chain length : %d\n", chain_length);
-
-    return {-1, -1};
+    return pos;
 }
 
-glm::ivec2 TextureAtlas::FindBottomLeft(int width, int height, TextureAtlasNode **best_node) {
-    assert(width <= this->GetWidth());
-    assert(height <= this->GetHeight());
+glm::ivec2 TextureAtlas::AddData(unsigned int width, unsigned int height, unsigned char* data) {
+    glm::ivec2 pos = rect_pack.Claim(width, height);
 
-    TextureAtlasNode* cur = head->next;
-    assert(cur);
-    assert(cur->prev);
-
-    int best_y = this->GetHeight(); // init to maximum value
-
-    *best_node = nullptr;
-
-    while (cur) {
-        if (this->GetWidth() - cur->x < width) break;
-        
-        int min_y = FindMinY(cur, width);
-
-        if (best_y > min_y) {
-            best_y = min_y;
-            *best_node = cur;
-        }
-
-        cur = cur->next;
+    if (pos.x != -1 && pos.y != -1) {
+        SetData(pos.x, pos.y, width, height, data);
     }
 
-    // DEBUG_STDOUT("FindBottomLeft: (%d %d)\n", width, height);
-    // if (*best_node) DEBUG_STDOUT("\t(%d %d)\n", (*best_node)->x, (*best_node)->y);
-
-    if (*best_node) return {(*best_node)->x, best_y};
-    else return {-1, -1};
-}
-
-int TextureAtlas::FindMinY(TextureAtlasNode *node, int width) {
-    assert(node);
-    assert(width <= this->GetWidth());
-
-    int min_y = 0;
-    int left = node->x;
-    int right = left + width;
-
-    TextureAtlasNode* cur = node;
-
-    while (cur) {
-        if (cur->x < right) {
-            if (min_y < cur->y) {
-                min_y = cur->y;
-            }
-        } else {
-            break;
-        }
-
-        cur = cur->next;
-    }
-
-    // DEBUG_STDOUT("FindMinY: %d for width %d\n", min_y, width);
-    
-    return min_y;
+    return pos;
 }
 
 glm::mat4 TextureAtlas::GetTextureTransformMatrix(const std::string name) {
