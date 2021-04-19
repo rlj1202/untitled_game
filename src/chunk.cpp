@@ -52,7 +52,7 @@ Chunk::Chunk() {
 
 }
 
-void ChunkMakeMesh() {
+void Chunk::Bake() {
     std::vector<Vertex> vertices = {
         Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
         Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
@@ -65,19 +65,22 @@ void ChunkMakeMesh() {
     };
     MeshProfile meshprofile_quad(vertices, indices, "");
 
-    std::srand(0);
-
     MeshProfile meshprofile_tilemap;
-    for (int x = -8; x < 8; x++) {
-        for (int y = -8; y < 8; y++) {
-            int tex_x = std::rand() % 3;
-            int tex_y = std::rand() % 3;
+    for (int y = 0; y < CHUNK_SIZE; y++) {
+        for (int x = 0; x < CHUNK_SIZE; x++) {
+            Block& block = blocks[y][x];
 
-            meshprofile_tilemap.Append(meshprofile_quad
-                // .rotate(glm::radians(45.0f), glm::vec3(0, 0, 1))
-                .TexScale(glm::vec2(1/16.0f, 1/16.0f))
-                .TexTranslate(glm::vec2(tex_x/16.0f, tex_y/16.0f))
-                .Translate(glm::vec3(x, y, 0)));
+            float tex_width = 1 / 16.0f;
+            float tex_height = 1 / 16.0f;
+            int tex_x = 0 / 16.0f;
+            int tex_y = 0 / 16.0f;
+            
+            meshprofile_tilemap.Append(
+                meshprofile_quad
+                    .TexScale(glm::vec2(tex_width, tex_height))
+                    .TexTranslate(glm::vec2(tex_x, tex_y))
+                    .Translate(glm::vec3(x, y, 0))
+            );
         }
     }
     

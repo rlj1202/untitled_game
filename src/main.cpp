@@ -35,6 +35,7 @@
 #include "graphics/gui.h"
 #include "chunk.h"
 #include "utils.h"
+#include "perlin.h"
 
 using json = nlohmann::json;
 
@@ -50,8 +51,9 @@ std::unique_ptr<Mesh>   mesh;
 std::unique_ptr<Mesh>   quad_mesh;
 // std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
 
-std::unique_ptr<Texture> tex;
-std::unique_ptr<Texture> gui_tex;
+std::unique_ptr<Texture>      tex;
+std::unique_ptr<Texture>      gui_tex;
+std::unique_ptr<TextureAtlas> atlas_test;
 
 std::unique_ptr<Canvas>   canvas;
 std::unique_ptr<IGuiNode> root_gui;
@@ -64,6 +66,8 @@ float camera_scale = 100.0f;
 double previous_time;
 int frame_count;
 double elapsed_time_sum;
+double elapsed_time_sum_world;
+double elapsed_time_sum_gui;
 
 glm::vec2 prev_cursor_pos;
 int prev_cursor_button;
@@ -112,7 +116,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 
 void scroll_callback(GLFWwindow *window, double x, double y) {
-    DEBUG_STDOUT("scroll callback : %f %f\n", x, y);
+    // DEBUG_STDOUT("scroll callback : %f %f\n", x, y);
 
     if (y > 0) {
         camera_scale /= 1.1;
@@ -127,7 +131,7 @@ void mousebutton_callback(GLFWwindow *window, int button, int action, int mods) 
     glfwGetCursorPos(window, &xpos, &ypos);
     glm::vec2 cur_pos(xpos, ypos);
 
-    DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
+    // DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
 
     recurMouseButtonEvent(root_gui.get(), cur_pos, button, action, mods);
 
@@ -165,15 +169,19 @@ void mainLoop() {
         float mem_total = GetMemoryTotal() / 1024.0f / 1024.0f;
         float mem_usage = GetMemoryUsage() / 1024.0f / 1024.0f;
 
-        DEBUG_STDOUT("FPS : %d, avg elapsed time : %.2f ms, mem : %.1f/%.1f MB\n",
+        DEBUG_STDOUT("FPS : %d, avg elapsed time : %.2f ms, mem : %.1f/%.1f MB, world = %.2f ms, gui = %.2f ms\n",
             frame_count,
             elapsed_time_sum / frame_count * 1000.0,
-            mem_usage, mem_total
+            mem_usage, mem_total,
+            elapsed_time_sum_world / frame_count * 1000.0,
+            elapsed_time_sum_gui / frame_count * 1000.0
         );
 
         frame_count = 0;
         previous_time = current_time;
         elapsed_time_sum = 0;
+        elapsed_time_sum_world = 0;
+        elapsed_time_sum_gui = 0;
     }
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -185,6 +193,8 @@ void mainLoop() {
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera_y += -speed;
 
     // Render world
+    double begin_time_world = glfwGetTime();
+
     glm::mat4 proj = glm::ortho(
         -width / 2.0f, width / 2.0f,
         -height / 2.0f, height / 2.0f,
@@ -193,7 +203,6 @@ void mainLoop() {
     glm::mat4 tex_transform(1);
     glm::mat4 view(1);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    tex_transform = glm::scale(tex_transform, glm::vec3(1.0f, 1.0f, 1.0f));
     view = glm::scale(view, glm::vec3(camera_scale, camera_scale, 0));
     view = glm::translate(view, glm::vec3(-camera_x, -camera_y, 0.0f));
 
@@ -203,12 +212,23 @@ void mainLoop() {
     shader->SetUniformMat4("view", view);
 
     tex->Bind();
-    mesh->Bind();
     mesh->Draw();
+
+    if (atlas_test->GetBound("wood_top")) {
+        tex_transform = atlas_test->GetTexTransMatrix("wood_top");
+        shader->SetUniformMat4("tex_transform", tex_transform);
+
+        atlas_test->Bind();
+        quad_mesh->Draw();
+    }
     
     // End render world
+    double end_time_world = glfwGetTime();
+    elapsed_time_sum_world += end_time_world - begin_time_world;
 
     // Render gui
+    double begin_time_gui = glfwGetTime();
+
     glm::mat4 gui_proj = glm::ortho(
         0.0f, (float) width,
         (float) height, 0.0f,
@@ -235,7 +255,10 @@ void mainLoop() {
     // glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
     // End render gui
+    double end_time_gui = glfwGetTime();
+    elapsed_time_sum_gui += end_time_gui - begin_time_gui;
 
+    //
     double end_time = glfwGetTime();
     double elapsed_time = end_time - current_time;
     elapsed_time_sum += elapsed_time;
@@ -248,11 +271,11 @@ int main() {
     srand(std::time(nullptr));
 
     // using json test
-    json test;
-    std::ifstream json_file("/res/minecraft_atlas.json");
-    json_file >> test;
-    json_file.close();
-    printf("Test : %s\n", test["name_example_1"]["origin"].dump().c_str());
+    // json test;
+    // std::ifstream json_file("/res/minecraft_atlas.json");
+    // json_file >> test;
+    // json_file.close();
+    // printf("Test : %s\n", test["name_example_1"]["origin"].dump().c_str());
 
     // using xml test
     pugi::xml_document doc;
@@ -282,7 +305,7 @@ int main() {
     glfwSetMouseButtonCallback(window, mousebutton_callback);
     glfwSetCursorPosCallback(window, cursorpos_callback);
 
-    Chunk chunk;
+    // Chunk chunk;
 
     std::vector<Vertex> vertices = {
         Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
@@ -297,10 +320,13 @@ int main() {
     MeshProfile meshprofile_quad(vertices, indices, "");
 
     MeshProfile meshprofile_tilemap;
-    for (int x = -8; x < 8; x++) {
-        for (int y = -8; y < 8; y++) {
-            int tex_x = std::rand() % 3;
-            int tex_y = std::rand() % 3;
+    int tilemap_size = 128;
+    for (int x = -tilemap_size / 2; x < tilemap_size / 2; x++) {
+        for (int y = -tilemap_size / 2; y < tilemap_size / 2; y++) {
+            int index = (int) ((Perlin(glm::vec2(x / 20.0f, y / 20.0f)) + 1.0f) / 2.0f * 25);
+
+            int tex_x = index % 5;
+            int tex_y = index / 5;
 
             meshprofile_tilemap.Append(meshprofile_quad
                 // .rotate(glm::radians(45.0f), glm::vec3(0, 0, 1))
@@ -319,6 +345,8 @@ int main() {
 
     tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
     gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
+
+    atlas_test = std::make_unique<TextureAtlas>(LoadTextureAtlas("/res/minecraft_atlas.xml"));
 
     canvas = std::make_unique<Canvas>();
     root_gui = std::make_unique<GuiWindow>(GuiWindow(

@@ -153,7 +153,6 @@ void GuiText::Draw(Canvas& canvas) {
 
 GuiButton::GuiButton(GuiArea area, Texture* texture, int corner)
     : GuiRect(area, texture, corner) {
-
 }
 
 void GuiButton::Draw(Canvas& canvas) {
@@ -168,7 +167,8 @@ void GuiButton::Draw(Canvas& canvas) {
 }
 
 bool GuiButton::OnMouseButton(glm::vec2 pos, int button, int action, int modifiers) {
-    if (action == GLFW_RELEASE) test_count++;
+    if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
+        test_count++;
 
     return true;
 }

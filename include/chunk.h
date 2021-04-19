@@ -48,7 +48,22 @@ class FloorType {
 public:
     FloorType(const std::string name);
 
-    float speed;
+    /**
+     * Name to idendify type.
+     */
+    const std::string name;
+
+    /**
+     * Moving speed of entity on this type of floor.
+     */
+    const float speed;
+};
+
+class Catalog {
+public:
+    Catalog();
+
+
 };
 
 class Block {
@@ -78,6 +93,8 @@ public:
 
     Block& GetBlock(const BlockCoord coord);
     void SetBlock(const BlockCoord coord, Block block);
+
+    void Bake();
 
 private:
     Floor floors[CHUNK_SIZE][CHUNK_SIZE];

@@ -48,11 +48,13 @@ target_include_directories(${PROJECT_NAME}
 if (EMSCRIPTEN)
     set_target_properties(${PROJECT_NAME}
         PROPERTIES LINK_FLAGS "\
+                              -fexceptions \
                               -s USE_WEBGL2=1 \
                               -s FULL_ES3=1 \
                               -s USE_GLFW=3 \
                               -s WASM=1 \
                               -s ALLOW_MEMORY_GROWTH=1 \
+                              -s NO_DISABLE_EXCEPTION_CATCHING \
                               -lopenal \
                               --preload-file ${PROJECT_SOURCE_DIR}/res@/res \
                               "

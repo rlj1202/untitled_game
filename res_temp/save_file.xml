@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<World>
+    <Name>My First Save file</Name>
+    <CreatedAt>2021-04-16 23:32</CreatedAt>
+    <Terrain>
+        <Chunk>
+            <Coordinate>(0, 0)</Coordinate>
+            <Floors>
+                <Floor>
+                    <Coordinate>(0, 0)</Coordinate>
+                    <Type>Dirt</Type>
+                </Floor>
+                <Floor>
+                    <Coordinate>(1, 0)</Coordinate>
+                    <Type>Dirt</Type>
+                </Floor>
+            </Floors>
+            <Blocks>
+                <Block>
+                    <Coordinate>(0, 0)</Coordinate>
+                    <Type>Wall</Type>
+                </Block>
+            </Blocks>
+        </Chunk>
+        <Chunk>
+            <Coordinate>(1, 0)</Coordinate>
+        </Chunk>
+        <Chunk>
+            <Coordinate>(2, 0)</Coordinate>
+        </Chunk>
+    </Terrain>
+</World>

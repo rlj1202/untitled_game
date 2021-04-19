@@ -47,7 +47,7 @@ public:
 
     void Bind(unsigned int active = 0);
     void Unbind(unsigned int active = 0);
-    
+
 private:
     unsigned int width;
     unsigned int height;
@@ -63,11 +63,18 @@ private:
 
 class TextureBound {
 public:
+    TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size);
+
+    /// Unique name of texture in the boundary.
     std::string name;
+
     /// coordinates of left-top corner of bound in uv coordinate system.
-    glm::ivec2 origin;
+    glm::ivec2 pos;
+
     /// width and height of bound.
     glm::ivec2 size;
+
+    bool operator<(const TextureBound& o) const;
 };
 
 /**
@@ -87,6 +94,10 @@ public:
         const std::vector<TextureBound>& bounds
     );
 
+    std::vector<TextureBound>& GetBounds();
+    TextureBound* GetBound(std::string name);
+    glm::mat4 GetTexTransMatrix(std::string name);
+
     /**
      * @brief Find appropriate place given width and height.
      * 
@@ -103,14 +114,10 @@ public:
      */
     glm::ivec2 AddData(unsigned int width, unsigned height, unsigned char* data);
 
-    glm::mat4 GetTextureTransformMatrix(const std::string name);
-
 private:
     RectPack rect_pack;
 
     std::vector<TextureBound> bounds;
-
-    std::map<std::string, glm::mat4> mats;
 };
 
 #endif

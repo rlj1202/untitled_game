@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<TextureAtlas>
+    <Path>./minecraft_atlas.png</Path>
+    <Texture>
+        <Name>grass</Name>
+        <Position>0 0</Position>
+        <Size>16 16</Size>
+    </Texture>
+    <Texture>
+        <Name>cobble_stone</Name>
+        <Position>0 16</Position>
+        <Size>16 16</Size>
+    </Texture>
+    <Texture>
+        <Name>sand</Name>
+        <Position>32 16</Position>
+        <Size>16 16</Size>
+    </Texture>
+    <Texture>
+        <Name>wood_side</Name>
+        <Position>64 16</Position>
+        <Size>16 16</Size>
+    </Texture>
+    <Texture>
+        <Name>wood_top</Name>
+        <Position>80 16</Position>
+        <Size>16 16</Size>
+    </Texture>
+</TextureAtlas>

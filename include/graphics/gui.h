@@ -90,4 +90,13 @@ private:
     int test_count = 0;
 };
 
+class GuiSlider : public GuiRect {
+public:
+    GuiSlider(GuiArea area, Texture* texture);
+
+    void Draw(Canvas& canvas) override;
+
+    bool OnMouseDrag(glm::vec2 pos, glm::vec2 rel, int button, int modifiers) override;
+};
+
 #endif
