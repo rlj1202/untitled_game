@@ -12,10 +12,22 @@
 
 #include "rect_pack.h"
 
+class ITexture {
+public:
+    virtual unsigned int GetId() = 0;
+
+    virtual unsigned int GetWidth() = 0;
+    virtual unsigned int GetHeight() = 0;
+
+    virtual void Bind(unsigned int active = 0) = 0;
+
+    virtual glm::mat4 GetTextureTransformationMatrix() = 0;
+};
+
 /**
  * Opengl texture wrapper class.
  */
-class Texture {
+class Texture : public ITexture {
 public:
     Texture(
         unsigned int width, unsigned int height, unsigned int channels,
@@ -29,8 +41,10 @@ public:
     Texture& operator=(const Texture& o) = delete;
     Texture& operator=(Texture&& o);
 
-    unsigned int GetWidth();
-    unsigned int GetHeight();
+    unsigned int GetId() override;
+
+    unsigned int GetWidth() override;
+    unsigned int GetHeight() override;
 
     unsigned char* GetData();
 
@@ -45,8 +59,10 @@ public:
      */
     void Bake();
 
-    void Bind(unsigned int active = 0);
+    void Bind(unsigned int active = 0) override;
     void Unbind(unsigned int active = 0);
+
+    glm::mat4 GetTextureTransformationMatrix() override;
 
 private:
     unsigned int width;
@@ -61,9 +77,21 @@ private:
     unsigned int texture_id;
 };
 
-class TextureBound {
+class TextureAtlas;
+class TextureBound : public ITexture {
+    friend class TextureAtlas;
+
 public:
-    TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size);
+    TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size, TextureAtlas* texture_atlas);
+
+    unsigned int GetId() override;
+
+    unsigned int GetWidth() override;
+    unsigned int GetHeight() override;
+
+    void Bind(unsigned int active = 0) override;
+
+    glm::mat4 GetTextureTransformationMatrix() override;
 
     /// Unique name of texture in the boundary.
     std::string name;
@@ -75,6 +103,9 @@ public:
     glm::ivec2 size;
 
     bool operator<(const TextureBound& o) const;
+
+private:
+    TextureAtlas* texture_atlas;
 };
 
 /**
@@ -96,7 +127,6 @@ public:
 
     std::vector<TextureBound>& GetBounds();
     TextureBound* GetBound(std::string name);
-    glm::mat4 GetTexTransMatrix(std::string name);
 
     /**
      * @brief Find appropriate place given width and height.

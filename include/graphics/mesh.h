@@ -27,11 +27,16 @@ public:
     MeshProfile Translate(glm::vec3 v);
     MeshProfile Scale(glm::vec3 v);
     MeshProfile Rotate(float angle, glm::vec3 dir);
+
+    MeshProfile Mul(glm::mat4 mat);
+
     MeshProfile& Append(const MeshProfile &o);
     MeshProfile& Append(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
 
     MeshProfile TexTranslate(glm::vec2 v);
     MeshProfile TexScale(glm::vec2 v);
+
+    MeshProfile TexMul(glm::mat4 mat);
 
     MeshProfile& Clear();
 

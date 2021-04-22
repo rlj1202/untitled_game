@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<Config>
-    <BlockTypes>
-        <BlockType>
-            <Name>Grass</Name>
-            <Texture>
-                <Type>atlas</Type>
-                <File>./testatlas_filename.xml</File>
-                <Name>grass</Name>
-            </Texture>
-        </BlockType>
-        <BlockType>
-            <Name>Stone</Name>
-            <Texture>
-                <Type>atlas</Type>
-                <File>./testatlas_filename.xml</File>
-                <Name>stone</Name>
-            </Texture>
-        </BlockType>
-    </BlockTypes>
-</Config>
+<BlockTypes>
+    <BlockType>
+        <Name>grass</Name>
+        <Texture>
+            <Path>./minecraft_atlas.xml</Path>
+            <Type>atlas</Type>
+            <Name>grass</Name>
+        </Texture>
+    </BlockType>
+    <BlockType>
+        <Name>cobble_stone</Name>
+        <Texture>
+            <Path>./minecraft_atlas.xml</Path>
+            <Type>atlas</Type>
+            <Name>cobble_stone</Name>
+        </Texture>
+    </BlockType>
+</BlockTypes>

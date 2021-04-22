@@ -58,7 +58,7 @@ Texture LoadTexture(std::string path) {
     return texture;
 }
 
-TextureAtlas LoadTextureAtlas(std::string path) {
+std::unique_ptr<TextureAtlas> LoadTextureAtlas(std::string path) {
     std::filesystem::path xml_filepath(path);
 
     // Open xml file
@@ -87,7 +87,8 @@ TextureAtlas LoadTextureAtlas(std::string path) {
         auto bound = TextureBound(
             std::string(name),
             glm::ivec2(pos_x, pos_y),
-            glm::ivec2(size_width, size_height)
+            glm::ivec2(size_width, size_height),
+            nullptr
         );
         bounds.push_back(bound);
     }
@@ -125,7 +126,7 @@ TextureAtlas LoadTextureAtlas(std::string path) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, img_nr_channels);
 
     // Return atlas object
-    TextureAtlas texture_atlas(
+    std::unique_ptr<TextureAtlas> texture_atlas = std::make_unique<TextureAtlas>(
         img_width, img_height, img_nr_channels,
         data,
         format, format,
@@ -134,5 +135,5 @@ TextureAtlas LoadTextureAtlas(std::string path) {
 
     stbi_image_free(data);
     
-    return texture_atlas;
+    return std::move(texture_atlas);
 }

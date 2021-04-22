@@ -88,6 +88,10 @@ Texture& Texture::operator=(Texture&& o) {
     return *this;
 }
 
+unsigned int Texture::GetId() {
+    return texture_id;
+}
+
 unsigned int Texture::GetWidth() {
     return width;
 }
@@ -144,8 +148,49 @@ void Texture::Unbind(unsigned int active) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-TextureBound::TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size)
-    : name(name), pos(pos), size(size) {
+glm::mat4 Texture::GetTextureTransformationMatrix() {
+    return glm::mat4(1);
+}
+
+TextureBound::TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size, TextureAtlas* texture_atlas)
+    : name(name), pos(pos), size(size), texture_atlas(texture_atlas) {
+}
+
+unsigned int TextureBound::GetId() {
+    if (texture_atlas)
+        return texture_atlas->GetId();
+    else
+        return -1;
+}
+
+unsigned int TextureBound::GetWidth() {
+    return size.x;
+}
+
+unsigned int TextureBound::GetHeight() {
+    return size.y;
+}
+
+void TextureBound::Bind(unsigned int active) {
+    if (texture_atlas) {
+        texture_atlas->Bind(active);
+    }
+}
+
+glm::mat4 TextureBound::GetTextureTransformationMatrix() {
+    glm::mat4 mat(1);
+    mat = glm::translate(mat, glm::vec3(
+        pos.x / (float) texture_atlas->GetWidth(),
+        pos.y / (float) texture_atlas->GetHeight(),
+        0
+    ));
+    mat = glm::scale(mat, glm::vec3(
+        size.x / (float) texture_atlas->GetWidth(),
+        size.y / (float) texture_atlas->GetHeight(),
+        0
+    ));
+
+    return mat;
 }
 
 bool TextureBound::operator<(const TextureBound& o) const {
@@ -169,6 +214,9 @@ TextureAtlas::TextureAtlas(
     rect_pack(width, height)
 {
     std::sort(this->bounds.begin(), this->bounds.end());
+    for (auto& bound : this->bounds) {
+        bound.texture_atlas = this;
+    }
 
     // TODO: Make skyline of rect_pack variable using given bounds.
 }
@@ -180,33 +228,13 @@ std::vector<TextureBound>& TextureAtlas::GetBounds() {
 TextureBound* TextureAtlas::GetBound(std::string name) {
     auto result = std::lower_bound(
         bounds.begin(), bounds.end(),
-        TextureBound(name, glm::ivec2(), glm::ivec2())
+        TextureBound(name, glm::ivec2(), glm::ivec2(), this)
     );
     if (result == bounds.end()) {
         return nullptr;
     }
+
     return result.base();
-}
-
-glm::mat4 TextureAtlas::GetTexTransMatrix(std::string name) {
-    auto bound = GetBound(name);
-    if (!bound) {
-        return glm::mat4(1);
-    }
-
-    glm::mat4 mat(1);
-    mat = glm::translate(mat, glm::vec3(
-        bound->pos.x / (float) GetWidth(),
-        bound->pos.y / (float) GetHeight(),
-        0
-    ));
-    mat = glm::scale(mat, glm::vec3(
-        bound->size.x / (float) GetWidth(),
-        bound->size.y / (float) GetHeight(),
-        0
-    ));
-
-    return mat;
 }
 
 glm::ivec2 TextureAtlas::Claim(unsigned int width, unsigned int height) {
@@ -216,8 +244,7 @@ glm::ivec2 TextureAtlas::Claim(unsigned int width, unsigned int height) {
 glm::ivec2 TextureAtlas::Claim(unsigned int width, unsigned int height, std::string name) {
     glm::ivec2 pos = rect_pack.Claim(width, height);
 
-    // TODO: Do something with given name.
-    bounds.push_back(TextureBound(name, pos, glm::ivec2(width, height)));
+    bounds.push_back(TextureBound(name, pos, glm::ivec2(width, height), this));
 
     return pos;
 }

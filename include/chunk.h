@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "graphics/mesh.h"
+#include "graphics/texture.h"
 
 const int CHUNK_SIZE = 16;
 
@@ -39,9 +40,11 @@ WorldCoord operator+(const BlockCoord block_coord, const ChunkCoord chunk_coord)
 
 class BlockType {
 public:
-    BlockType(const std::string name);
+    BlockType(const std::string name, ITexture* texture);
 
     const std::string name;
+
+    ITexture* texture;
 };
 
 class FloorType {
@@ -69,19 +72,21 @@ public:
 class Block {
 public:
     Block();
-    Block(const BlockType* type);
+    Block(BlockType* type);
+
+    BlockType* GetType();
 
 private:
-    const BlockType* type;
+    BlockType* type;
 };
 
 class Floor {
 public:
     Floor();
-    Floor(const FloorType* type);
+    Floor(FloorType* type);
 
 private:
-    const FloorType* type;
+    FloorType* type;
 };
 
 class Chunk {
@@ -95,6 +100,8 @@ public:
     void SetBlock(const BlockCoord coord, Block block);
 
     void Bake();
+
+    Mesh& GetMesh();
 
 private:
     Floor floors[CHUNK_SIZE][CHUNK_SIZE];

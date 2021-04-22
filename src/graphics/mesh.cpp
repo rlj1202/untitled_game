@@ -39,6 +39,16 @@ MeshProfile MeshProfile::TexScale(glm::vec2 v) {
     return new_profile;
 }
 
+MeshProfile MeshProfile::TexMul(glm::mat4 mat) {
+    MeshProfile new_profile(*this);
+
+    for (Vertex& vertex : new_profile.vertices) {
+        vertex.tex_coord = (mat * glm::vec4(vertex.tex_coord, 0, 1));
+    }
+
+    return new_profile;
+}
+
 MeshProfile MeshProfile::Translate(glm::vec3 v) {
     MeshProfile new_profile(*this);
 
@@ -65,6 +75,16 @@ MeshProfile MeshProfile::Rotate(float angle, glm::vec3 dir) {
     glm::mat4 mat = glm::rotate(angle, dir);
 
     for (Vertex &vertex : new_profile.vertices) {
+        vertex.position = (mat * glm::vec4(vertex.position, 1));
+    }
+
+    return new_profile;
+}
+
+MeshProfile MeshProfile::Mul(glm::mat4 mat) {
+    MeshProfile new_profile(*this);
+
+    for (Vertex& vertex : new_profile.vertices) {
         vertex.position = (mat * glm::vec4(vertex.position, 1));
     }
 

@@ -58,6 +58,11 @@ std::unique_ptr<TextureAtlas> atlas_test;
 std::unique_ptr<Canvas>   canvas;
 std::unique_ptr<IGuiNode> root_gui;
 
+std::unique_ptr<Chunk> chunk;
+
+std::unique_ptr<BlockType> blocktype_grass;
+std::unique_ptr<BlockType> blocktype_wood_top;
+
 float camera_x;
 float camera_y;
 float camera_scale = 100.0f;
@@ -214,13 +219,18 @@ void mainLoop() {
     tex->Bind();
     mesh->Draw();
 
-    if (atlas_test->GetBound("wood_top")) {
-        tex_transform = atlas_test->GetTexTransMatrix("wood_top");
-        shader->SetUniformMat4("tex_transform", tex_transform);
+    TextureBound* bound;
+    if ((bound = atlas_test->GetBound("wood_top"))) {
+        shader->SetUniformMat4("tex_transform", bound->GetTextureTransformationMatrix());
 
-        atlas_test->Bind();
+        bound->Bind();
+        // atlas_test->Bind();
         quad_mesh->Draw();
     }
+
+    shader->SetUniformMat4("tex_transform", glm::mat4(1));
+    atlas_test->Bind(); // TODO:
+    chunk->GetMesh().Draw();
     
     // End render world
     double end_time_world = glfwGetTime();
@@ -284,8 +294,10 @@ int main() {
         DEBUG_STDOUT("Failed to load xml file\n");
         return -1;
     }
-    for (pugi::xml_node block_type : doc.child("Config").child("BlockTypes").children("BlockType")) {
-        DEBUG_STDOUT("block type name : %s\n", block_type.child("Name").child_value());
+    for (auto block_type : doc.child("BlockTypes").children("BlockType")) {
+        auto name = block_type.child("Name").child_value();
+        auto tex_path = block_type.child("Texture").child("Path").child_value();
+        DEBUG_STDOUT("block type name : %s\n", name);
     }
 
     // start of program
@@ -304,9 +316,8 @@ int main() {
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetMouseButtonCallback(window, mousebutton_callback);
     glfwSetCursorPosCallback(window, cursorpos_callback);
-
-    // Chunk chunk;
-
+    
+    // Meshes
     std::vector<Vertex> vertices = {
         Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
         Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
@@ -335,7 +346,6 @@ int main() {
                 .Translate(glm::vec3(x, y, 0)));
         }
     }
-    
     mesh = std::make_unique<Mesh>(BuildMesh(meshprofile_tilemap));
     quad_mesh = std::make_unique<Mesh>(BuildMesh(
         meshprofile_quad
@@ -343,11 +353,32 @@ int main() {
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
     ));
 
+    // Textures
     tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
     gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
 
-    atlas_test = std::make_unique<TextureAtlas>(LoadTextureAtlas("/res/minecraft_atlas.xml"));
+    atlas_test = std::move(LoadTextureAtlas("/res/minecraft_atlas.xml"));
 
+    // Chunk and BlockTypes
+    blocktype_grass = std::make_unique<BlockType>(
+        "grass", atlas_test->GetBound("grass")
+    );
+    blocktype_wood_top = std::make_unique<BlockType>(
+        "wood_top", atlas_test->GetBound("wood_top")
+    );
+    chunk = std::make_unique<Chunk>();
+    for (int r = 0; r < CHUNK_SIZE; r++) {
+        for (int c = 0; c < CHUNK_SIZE; c++) {
+            int value = std::rand() % 2;
+            if (value == 0)
+                chunk->SetBlock({c, r}, Block(blocktype_grass.get()));
+            else
+                chunk->SetBlock({c, r}, Block(blocktype_wood_top.get()));
+        }
+    }
+    chunk->Bake();
+
+    // Gui elements
     canvas = std::make_unique<Canvas>();
     root_gui = std::make_unique<GuiWindow>(GuiWindow(
         GuiArea{

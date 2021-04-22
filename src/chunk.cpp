@@ -1,5 +1,7 @@
 #include "chunk.h"
 
+#include "graphics/mesh_builder.h"
+
 WorldCoord::WorldCoord(int x, int y) : x(x), y(y) {}
 
 WorldCoord::operator ChunkCoord() {
@@ -28,7 +30,8 @@ WorldCoord operator+(const BlockCoord block_coord, const ChunkCoord chunk_coord)
     return chunk_coord + block_coord;
 }
 
-BlockType::BlockType(const std::string name) : name(name) {
+BlockType::BlockType(const std::string name, ITexture* texture)
+    : name(name), texture(texture) {
 
 }
 
@@ -36,15 +39,19 @@ Block::Block() : Block(nullptr) {
 
 }
 
-Block::Block(const BlockType* type) : type(type) {
+Block::Block(BlockType* type) : type(type) {
 
+}
+
+BlockType* Block::GetType() {
+    return type;
 }
 
 Floor::Floor() {
 
 }
 
-Floor::Floor(const FloorType* type) : type(type) {
+Floor::Floor(FloorType* type) : type(type) {
 
 }
 
@@ -52,12 +59,20 @@ Chunk::Chunk() {
 
 }
 
+Block& Chunk::GetBlock(const BlockCoord coord) {
+    return blocks[coord.y][coord.x];
+}
+
+void Chunk::SetBlock(const BlockCoord coord, Block block) {
+    blocks[coord.y][coord.x] = block;
+}
+
 void Chunk::Bake() {
     std::vector<Vertex> vertices = {
+        Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
         Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
         Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
         Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
     };
     std::vector<unsigned int> indices = {
         0, 1, 2,
@@ -70,21 +85,21 @@ void Chunk::Bake() {
         for (int x = 0; x < CHUNK_SIZE; x++) {
             Block& block = blocks[y][x];
 
-            float tex_width = 1 / 16.0f;
-            float tex_height = 1 / 16.0f;
-            int tex_x = 0 / 16.0f;
-            int tex_y = 0 / 16.0f;
+            ITexture* texture = block.GetType()->texture;
             
             meshprofile_tilemap.Append(
                 meshprofile_quad
-                    .TexScale(glm::vec2(tex_width, tex_height))
-                    .TexTranslate(glm::vec2(tex_x, tex_y))
+                    .TexMul(texture->GetTextureTransformationMatrix())
                     .Translate(glm::vec3(x, y, 0))
             );
         }
     }
     
-    // mesh = std::make_unique<Mesh>(BuildMesh(meshprofile_tilemap));
+    mesh = std::make_unique<Mesh>(BuildMesh(meshprofile_tilemap));
+}
+
+Mesh& Chunk::GetMesh() {
+    return *mesh;
 }
 
 World::World() {
