@@ -33,6 +33,7 @@
 #include "graphics/mesh.h"
 #include "graphics/mesh_builder.h"
 #include "graphics/gui.h"
+#include "graphics/model.h"
 #include "chunk.h"
 #include "utils.h"
 #include "perlin.h"
@@ -46,10 +47,13 @@ std::string title = "untitled_game";
 // glfw
 GLFWwindow* window;
 
-std::unique_ptr<Shader> shader;
-std::unique_ptr<Mesh>   mesh;
-std::unique_ptr<Mesh>   quad_mesh;
+std::unique_ptr<Shader>     shader;
+std::unique_ptr<Mesh>       mesh;
+std::unique_ptr<Mesh>       quad_mesh;
+std::unique_ptr<_dev::Mesh> test_mesh;
 // std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
+
+std::unique_ptr<Model> test_model;
 
 std::unique_ptr<Texture>      tex;
 std::unique_ptr<Texture>      gui_tex;
@@ -211,26 +215,30 @@ void mainLoop() {
     view = glm::scale(view, glm::vec3(camera_scale, camera_scale, 0));
     view = glm::translate(view, glm::vec3(-camera_x, -camera_y, 0.0f));
 
-    shader->SetUniformMat4("projection", proj);
-    shader->SetUniformMat4("model", model);
-    shader->SetUniformMat4("tex_transform", tex_transform);
-    shader->SetUniformMat4("view", view);
+    shader->SetUniform("projection", proj);
+    shader->SetUniform("model", model);
+    shader->SetUniform("tex_transform", tex_transform);
+    shader->SetUniform("view", view);
 
     tex->Bind();
     mesh->Draw();
 
     TextureBound* bound;
     if ((bound = atlas_test->GetBound("wood_top"))) {
-        shader->SetUniformMat4("tex_transform", bound->GetTextureTransformationMatrix());
+        shader->SetUniform("tex_transform", bound->GetTextureTransformationMatrix());
 
         bound->Bind();
         // atlas_test->Bind();
         quad_mesh->Draw();
     }
 
-    shader->SetUniformMat4("tex_transform", glm::mat4(1));
+    shader->SetUniform("tex_transform", glm::mat4(1));
     atlas_test->Bind(); // TODO:
-    chunk->GetMesh().Draw();
+    chunk->GetModel().Draw();
+
+    test_mesh->Draw();
+
+    test_model->Draw();
     
     // End render world
     double end_time_world = glfwGetTime();
@@ -246,10 +254,10 @@ void mainLoop() {
     );
     glm::mat4 init_mat(1);
 
-    shader->SetUniformMat4("projection", gui_proj);
-    shader->SetUniformMat4("view", init_mat);
-    shader->SetUniformMat4("model", init_mat);
-    shader->SetUniformMat4("tex_transform", init_mat);
+    shader->SetUniform("projection", gui_proj);
+    shader->SetUniform("view", init_mat);
+    shader->SetUniform("model", init_mat);
+    shader->SetUniform("tex_transform", init_mat);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -316,6 +324,12 @@ int main() {
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetMouseButtonCallback(window, mousebutton_callback);
     glfwSetCursorPosCallback(window, cursorpos_callback);
+
+    // Textures
+    tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
+    gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
+
+    atlas_test = std::move(LoadTextureAtlas("/res/minecraft_atlas.xml"));
     
     // Meshes
     std::vector<Vertex> vertices = {
@@ -328,7 +342,7 @@ int main() {
         0, 1, 2,
         0, 2, 3,
     };
-    MeshProfile meshprofile_quad(vertices, indices, "");
+    MeshProfile meshprofile_quad(vertices, indices, atlas_test.get());
 
     MeshProfile meshprofile_tilemap;
     int tilemap_size = 128;
@@ -353,11 +367,69 @@ int main() {
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
     ));
 
-    // Textures
-    tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
-    gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
+    {
+        std::vector<Vertex> vertices = {
+            Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+            Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+        };
+        std::vector<unsigned int> indices = {
+            0, 1, 2,
+            0, 2, 3,
+        };
 
-    atlas_test = std::move(LoadTextureAtlas("/res/minecraft_atlas.xml"));
+        std::unique_ptr<Buffer<Vertex>> buffer = std::make_unique<Buffer<Vertex>>(
+            GL_ARRAY_BUFFER, GL_STATIC_DRAW
+        );
+        buffer->SetData(vertices);
+
+        std::unique_ptr<Buffer<unsigned int>> indices_buffer = std::make_unique<Buffer<unsigned int>>(
+            GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW
+        );
+        indices_buffer->SetData(indices);
+
+        _dev::BufferLayout buffer_layout = {
+            _dev::BufferElement(0, 3, GL_FLOAT, sizeof(float)),
+            _dev::BufferElement(1, 2, GL_FLOAT, sizeof(float)),
+        };
+
+        test_mesh = std::make_unique<_dev::Mesh>(atlas_test.get());
+        test_mesh->AttachBuffer(std::move(buffer), buffer_layout);
+        test_mesh->AttachElementArrayBuffer(std::move(indices_buffer));
+        test_mesh->Bake();
+    }
+
+    // Model
+    test_model = std::make_unique<Model>();
+    {
+        std::vector<Vertex> vertices = {
+            Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+            Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+            Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+        };
+        std::vector<unsigned int> indices = {
+            0, 1, 2,
+            0, 2, 3,
+        };
+        MeshProfile profile_quad(vertices, indices, nullptr);
+
+        MeshProfile profile_minecraft_quad = profile_quad.TexScale(glm::vec2(1 / 16.0f, 1 / 16.0f));
+        profile_minecraft_quad.texture = atlas_test.get();
+
+        MeshProfile profile_2 = profile_quad;
+        profile_2.texture = atlas_test->GetBound("wood_top");
+
+        MeshProfile profile_3 = profile_quad;
+        profile_3.texture = atlas_test->GetBound("cobble_stone");
+
+        test_model->Add(profile_minecraft_quad.Translate(glm::vec3(-1, 0, 0)));
+        test_model->Add(profile_minecraft_quad.Translate(glm::vec3(-2, 0, 0)));
+        test_model->Add(profile_2.Translate(glm::vec3(-3, 0, 0)));
+        test_model->Add(profile_3.Translate(glm::vec3(-4, 0, 0)));
+    }
+    test_model->Bake();
 
     // Chunk and BlockTypes
     blocktype_grass = std::make_unique<BlockType>(

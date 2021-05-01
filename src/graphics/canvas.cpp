@@ -36,7 +36,7 @@ Canvas::Canvas() {
             0, 1, 2,
             0, 2, 3,
         };
-        font_quad_profile = MeshProfile(vertices, indices, "");
+        font_quad_profile = MeshProfile(vertices, indices, texture_atlas.get());
     }
     {
         std::vector<Vertex> vertices = {
@@ -49,7 +49,7 @@ Canvas::Canvas() {
             0, 1, 2,
             0, 2, 3,
         };
-        quad_profile = MeshProfile(vertices, indices, "");
+        quad_profile = MeshProfile(vertices, indices, nullptr); // TODO:
     }
 }
 

@@ -78,28 +78,24 @@ void Chunk::Bake() {
         0, 1, 2,
         0, 2, 3,
     };
-    MeshProfile meshprofile_quad(vertices, indices, "");
+    MeshProfile meshprofile_quad(vertices, indices, nullptr);
 
-    MeshProfile meshprofile_tilemap;
+    model = std::make_unique<Model>();
+
     for (int y = 0; y < CHUNK_SIZE; y++) {
         for (int x = 0; x < CHUNK_SIZE; x++) {
             Block& block = blocks[y][x];
 
-            ITexture* texture = block.GetType()->texture;
-            
-            meshprofile_tilemap.Append(
-                meshprofile_quad
-                    .TexMul(texture->GetTextureTransformationMatrix())
-                    .Translate(glm::vec3(x, y, 0))
-            );
+            meshprofile_quad.texture = block.GetType()->texture;
+            model->Add(meshprofile_quad.Translate(glm::vec3(x, y, 0)));
         }
     }
-    
-    mesh = std::make_unique<Mesh>(BuildMesh(meshprofile_tilemap));
+
+    model->Bake();
 }
 
-Mesh& Chunk::GetMesh() {
-    return *mesh;
+Model& Chunk::GetModel() {
+    return *model;
 }
 
 World::World() {

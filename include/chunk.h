@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "graphics/mesh.h"
+#include "graphics/model.h"
 #include "graphics/texture.h"
 
 const int CHUNK_SIZE = 16;
@@ -101,13 +102,13 @@ public:
 
     void Bake();
 
-    Mesh& GetMesh();
+    Model& GetModel();
 
 private:
     Floor floors[CHUNK_SIZE][CHUNK_SIZE];
     Block blocks[CHUNK_SIZE][CHUNK_SIZE];
 
-    std::unique_ptr<Mesh> mesh;
+    std::unique_ptr<Model> model;
 };
 
 class World {

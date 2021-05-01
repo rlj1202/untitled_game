@@ -15,8 +15,8 @@ MeshProfile::MeshProfile()
     : vertices(std::vector<Vertex>()), indices(std::vector<unsigned int>()) {
 }
 
-MeshProfile::MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, std::string texture_name)
-    : vertices(vertices), indices(indices), texture_name(texture_name) {
+MeshProfile::MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, ITexture* texture)
+    : vertices(vertices), indices(indices), texture(texture) {
 }
 
 MeshProfile MeshProfile::TexTranslate(glm::vec2 v) {
@@ -118,6 +118,7 @@ MeshProfile& MeshProfile::Append(std::vector<Vertex>& vertices, std::vector<unsi
 MeshProfile& MeshProfile::Clear() {
     vertices.clear();
     indices.clear();
+
     return *this;
 }
 
@@ -145,8 +146,16 @@ Mesh::~Mesh() {
     if (ebo_id) glDeleteBuffers(1, &ebo_id);
 }
 
+void Mesh::Bake() {
+    // do nothing
+}
+
 void Mesh::Bind() {
     glBindVertexArray(vao_id);
+}
+
+void Mesh::Unbind() {
+    glBindVertexArray(0);
 }
 
 void Mesh::Draw() {
@@ -154,41 +163,123 @@ void Mesh::Draw() {
     glDrawElements(GL_TRIANGLES, cnt_vertices, GL_UNSIGNED_INT, 0);
 }
 
-Buffer::Buffer(unsigned int target, unsigned int usage)
-    : target(target), usage(usage) {
-    glGenBuffers(1, &buffer_id);
+// temporary namespace
+namespace _dev {
+
+BufferElement::BufferElement(int index, int size, unsigned int gl_type, int bytes_of_type)
+    : index(index), size(size), gl_type(gl_type), bytes_of_type(bytes_of_type) {
+
 }
 
-Buffer::Buffer(Buffer &&o) {
-    this->target = o.target;
-    this->usage = o.usage;
-
-    this->buffer_id = o.buffer_id;
-    o.buffer_id = 0;
+BufferLayout::BufferLayout(std::initializer_list<BufferElement> elements)
+    : elements(elements) {
+    
 }
 
-Buffer::~Buffer() {
-    if (buffer_id) {
-        glDeleteBuffers(1, &buffer_id);
-        buffer_id = 0;
+std::vector<BufferElement>& BufferLayout::GetElements() {
+    return elements;
+}
+
+Mesh::Mesh(ITexture* texture) : vao_id(0), texture(texture) {
+    indices_buffer = std::make_unique<Buffer<unsigned int>>(
+        GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW
+    );
+}
+
+Mesh::Mesh(Mesh&& o)
+    : buffers(std::move(o.buffers)), indices_buffer(std::move(o.indices_buffer)) {
+    vao_id = o.vao_id;
+    o.vao_id = 0;
+}
+
+Mesh::~Mesh() {
+    if (vao_id) {
+        glDeleteVertexArrays(1, &vao_id);
+        vao_id = 0;
     }
 }
 
-Buffer& Buffer::operator=(Buffer &&o) noexcept {
-    this->target = o.target;
-    this->usage = o.usage;
+Mesh& Mesh::operator=(Mesh&& o) noexcept {
+    if (this == &o) return *this;
 
-    this->buffer_id = o.buffer_id;
-    o.buffer_id = 0;
+    // Delete existing vao if it is.
+    if (vao_id) {
+        glDeleteVertexArrays(1, &vao_id);
+    }
+    vao_id = o.vao_id;
+    o.vao_id = 0;
+
+    buffers = std::move(o.buffers);
+    indices_buffer = std::move(o.indices_buffer);
 
     return *this;
 }
 
-void Buffer::Bind() {
-    glBindBuffer(target, buffer_id);
+void Mesh::AttachBuffer(std::unique_ptr<IBuffer> buffer, BufferLayout layout) {
+    Bind();
+    buffer->Bind();
+
+    unsigned int stride = 0;
+    for (auto& element : layout.GetElements()) {
+        stride += element.size * element.bytes_of_type;
+    }
+
+    unsigned int offset = 0;
+    for (auto& element : layout.GetElements()) {
+        glVertexAttribPointer(element.index, element.size, element.gl_type, GL_FALSE, stride, (void*) offset);
+        glEnableVertexAttribArray(element.index);
+
+        offset += element.size * element.bytes_of_type;
+    }
+
+    Unbind();
+
+    buffers.push_back(std::move(buffer));
 }
 
-void Buffer::SetData(size_t size, const void *data) {
+void Mesh::AttachElementArrayBuffer(std::unique_ptr<Buffer<unsigned int>> buffer) {
     Bind();
-    glBufferData(target, size, data, usage);
+    buffer->Bind();
+
+    Unbind();
+
+    this->indices_buffer = std::move(buffer);
+}
+
+void Mesh::Bake() {
+    if (vao_id == 0) {
+        glGenVertexArrays(1, &vao_id);
+    }
+    glBindVertexArray(vao_id);
+
+    for (auto& buffer : buffers) {
+        buffer->Bake();
+    }
+
+    indices_buffer->Bake();
+
+    glBindVertexArray(0);
+}
+
+void Mesh::Bind() {
+    if (vao_id == 0) {
+        Bake();
+    }
+
+    glBindVertexArray(vao_id);
+}
+
+void Mesh::Unbind() {
+    glBindVertexArray(0);
+}
+
+void Mesh::Draw() {
+    if (vao_id) {
+        texture->Bind();
+        glBindVertexArray(vao_id);
+        glDrawElements(GL_TRIANGLES, indices_buffer->Size(), GL_UNSIGNED_INT, (void*) 0);
+    }
+}
+
+// end of temporary namespace
 }

@@ -1,0 +1,13 @@
+@startuml test
+
+class Buffer {
+    +Bind()
+}
+
+class Shader {
+    +Bind()
+}
+
+Buffer --|> Shader
+
+@enduml

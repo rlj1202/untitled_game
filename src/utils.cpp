@@ -94,16 +94,11 @@ std::unique_ptr<TextureAtlas> LoadTextureAtlas(std::string path) {
     }
 
     // Get img file path spectified in xml file
-    auto original_current_path = std::filesystem::current_path();
-    std::filesystem::current_path(xml_filepath.parent_path());
-    auto img_filepath = std::filesystem::path(doc.child("TextureAtlas").child("Path").child_value());
     std::error_code error;
-    img_filepath = std::filesystem::canonical(img_filepath, error);
+    auto img_filepath = std::filesystem::absolute(xml_filepath.parent_path() / doc.child("TextureAtlas").child("Path").child_value(), error);
     if (error) {
         DEBUG_STDOUT("Cannot find corresponding img file path.\n");
     }
-    std::filesystem::current_path(original_current_path);
-
     DEBUG_STDOUT("Loading image : %s\n", img_filepath.c_str());
 
     // Load img

@@ -41,6 +41,7 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
+        ${PROJECT_SOURCE_DIR}/src      # because of template implementation files...
         ${PROJECT_SOURCE_DIR}/include
         ${PROJECT_SOURCE_DIR}/libs/glm
 )

@@ -3,6 +3,9 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+#define DEBUG
+#include "debug.h"
+
 Mesh BuildMesh(const MeshProfile &profile) {
     return BuildMesh(profile.vertices, profile.indices);
 }

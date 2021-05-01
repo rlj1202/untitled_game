@@ -3,13 +3,29 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <GLFW/glfw3.h>
 #include <GLES3/gl3.h>
 #include <glm/glm.hpp>
 
+#include "graphics/texture.h"
+
 #define DEBUG
 #include "debug.h"
+
+/**
+ * @brief Minimum unit of drawable thing. Contains information of primitives and texture.
+ */
+class IMesh {
+public:
+    virtual ~IMesh() {}
+
+    virtual void Bake() = 0;
+    virtual void Bind() = 0;
+    virtual void Unbind() = 0;
+    virtual void Draw() = 0;
+};
 
 class Vertex {
 public:
@@ -22,7 +38,7 @@ public:
 class MeshProfile {
 public:
     MeshProfile();
-    MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, std::string texture_name);
+    MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, ITexture* texture);
 
     MeshProfile Translate(glm::vec3 v);
     MeshProfile Scale(glm::vec3 v);
@@ -42,19 +58,21 @@ public:
 
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-
-    std::string texture_name;
+    
+    ITexture* texture;
 };
 
-class Mesh {
+class Mesh : public IMesh {
 public:
     Mesh(unsigned int vao_id, std::vector<unsigned int> vbo_id, unsigned int ebo_id, unsigned int cnt_vertices);
     Mesh(const Mesh &o) = delete;
     Mesh(Mesh&& mesh);
     ~Mesh();
 
-    void Bind();
-    void Draw();
+    void Bake() override;
+    void Bind() override;
+    void Unbind() override;
+    void Draw() override;
 
     Mesh& operator=(const Mesh &o) = delete;
 
@@ -65,45 +83,135 @@ private:
     unsigned int cnt_vertices;
 };
 
-class Buffer {
+class IBuffer {
+public:
+    virtual ~IBuffer() {}
+
+    /**
+     * Number of elements in buffer.
+     */
+    virtual unsigned int Size() = 0;
+
+    /**
+     * Size of single element in buffer in bytes.
+     */
+    virtual unsigned int Stride() = 0;
+
+    virtual void Bake() = 0;
+    virtual void Bind() = 0;
+    virtual void Unbind() = 0;
+};
+
+template<typename T>
+class Buffer : public IBuffer {
 public:
     Buffer(unsigned int target, unsigned int usage);
-    Buffer(const Buffer &o) = delete;
-    Buffer(Buffer &&o);
+    Buffer(const Buffer& o);
+    Buffer(Buffer&& o);
     ~Buffer();
 
-    Buffer& operator=(const Buffer &o) = delete;
-    Buffer& operator=(Buffer &&o) noexcept;
+    Buffer& operator=(const Buffer& o);
+    Buffer& operator=(Buffer&& o) noexcept;
 
-    void Bind();
-    void SetData(size_t size, const void *data);
+    void SetData(unsigned int length, const T* data);
+    void SetData(std::vector<T>& data);
+
+    unsigned int Size() override;
+    unsigned int Stride() override;
+
+    void Bake() override;
+    void Bind() override;
+    void Unbind() override;
 
 private:
     unsigned int target;
     unsigned int usage;
 
     unsigned int buffer_id;
+
+    std::vector<T> data;
 };
 
-class _Mesh {
+// TODO: 
+template<typename T>
+class SubBuffer : public IBuffer {
 public:
-    _Mesh();
-    _Mesh(const _Mesh &o) = delete;
-    _Mesh(_Mesh &&o);
-    ~_Mesh();
+    SubBuffer(IBuffer* buffer, unsigned int offset);
 
-    _Mesh& operator=(const _Mesh &o) = delete;
-    _Mesh& operator=(_Mesh &&o);
+    void SetData(unsigned int length, const T* data);
+    void SetData(std::vector<T>& data);
 
-    void Bind();
-    void Draw();
+    unsigned int Size() override;
+    unsigned int Stride() override;
+
+    void Bake() override;
+    void Bind() override;
+    void Unbind() override;
+
+private:
+    IBuffer* buffer;
+
+    /// Offset in buffer in bytes.
+    unsigned int offset;
+};
+
+#include "graphics/mesh.tcc"
+
+// temporary namespace
+namespace _dev {
+
+class BufferElement {
+public:
+    BufferElement(int index, int size, unsigned int gl_type, int bytes_of_type);
+
+    int index;
+    int size;
+    unsigned int gl_type;
+    int bytes_of_type;
+};
+
+class BufferLayout {
+public:
+    BufferLayout(std::initializer_list<BufferElement> elements);
+
+    std::vector<BufferElement>& GetElements();
+
+private:
+    std::vector<BufferElement> elements;
+};
+
+/**
+ * 
+ */
+class Mesh : public IMesh {
+public:
+    Mesh(ITexture* texture);
+    Mesh(const Mesh& o) = delete;
+    Mesh(Mesh&& o);
+    ~Mesh();
+
+    Mesh& operator=(const Mesh& o) = delete;
+    Mesh& operator=(Mesh&& o) noexcept;
+
+    void AttachBuffer(std::unique_ptr<IBuffer> buffer, BufferLayout layout);
+    void AttachElementArrayBuffer(std::unique_ptr<Buffer<unsigned int>> buffer);
+
+    void Bake() override;
+    void Bind() override;
+    void Unbind() override;
+    void Draw() override;
 
 private:
     unsigned int vao_id;
 
-    unsigned int ebo_id;
-    unsigned int num_indices;
+    std::vector<std::unique_ptr<IBuffer>> buffers;
+    std::unique_ptr<Buffer<unsigned int>> indices_buffer;
+
+    ITexture* texture;
 };
+
+// end of temporary namespace
+}
 
 /*
 template<typename Datatype, int... Ptrs>
