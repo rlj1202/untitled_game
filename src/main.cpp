@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <fstream>
+#include <filesystem>
 
 // emscripten
 #ifdef EMSCRIPTEN
@@ -37,6 +38,7 @@
 #include "chunk.h"
 #include "utils.h"
 #include "perlin.h"
+#include "asset.h"
 
 using json = nlohmann::json;
 
@@ -47,7 +49,9 @@ std::string title = "untitled_game";
 // glfw
 GLFWwindow* window;
 
-std::unique_ptr<Shader>     shader;
+std::unique_ptr<AssetManager> asset_manager;
+
+std::unique_ptr<ShaderProgram>     shader;
 std::unique_ptr<Mesh>       mesh;
 std::unique_ptr<Mesh>       quad_mesh;
 std::unique_ptr<_dev::Mesh> test_mesh;
@@ -55,9 +59,9 @@ std::unique_ptr<_dev::Mesh> test_mesh;
 
 std::unique_ptr<Model> test_model;
 
-std::unique_ptr<Texture>      tex;
-std::unique_ptr<Texture>      gui_tex;
-std::unique_ptr<TextureAtlas> atlas_test;
+Texture*      tex;
+Texture*      gui_tex;
+TextureAtlas* atlas_test;
 
 std::unique_ptr<Canvas>   canvas;
 std::unique_ptr<IGuiNode> root_gui;
@@ -224,11 +228,10 @@ void mainLoop() {
     mesh->Draw();
 
     TextureBound* bound;
-    if ((bound = atlas_test->GetBound("wood_top"))) {
+    if ((bound = atlas_test->GetBound("cobble_stone"))) {
         shader->SetUniform("tex_transform", bound->GetTextureTransformationMatrix());
-
         bound->Bind();
-        // atlas_test->Bind();
+
         quad_mesh->Draw();
     }
 
@@ -325,11 +328,13 @@ int main() {
     glfwSetMouseButtonCallback(window, mousebutton_callback);
     glfwSetCursorPosCallback(window, cursorpos_callback);
 
-    // Textures
-    tex = std::make_unique<Texture>(LoadTexture("/res/minecraft_atlas.png"));
-    gui_tex = std::make_unique<Texture>(LoadTexture("/res/gui.png"));
+    // Asset testing
+    asset_manager = std::make_unique<AssetManager>("/res/");
 
-    atlas_test = std::move(LoadTextureAtlas("/res/minecraft_atlas.xml"));
+    // Textures
+    tex = asset_manager->GetAsset<Texture>(L"textures/minecraft_atlas/texture");
+    gui_tex = asset_manager->GetAsset<Texture>(L"textures/gui");
+    atlas_test = asset_manager->GetAsset<TextureAtlas>(L"textures/minecraft_atlas");
     
     // Meshes
     std::vector<Vertex> vertices = {
@@ -342,7 +347,7 @@ int main() {
         0, 1, 2,
         0, 2, 3,
     };
-    MeshProfile meshprofile_quad(vertices, indices, atlas_test.get());
+    MeshProfile meshprofile_quad(vertices, indices, atlas_test);
 
     MeshProfile meshprofile_tilemap;
     int tilemap_size = 128;
@@ -394,7 +399,7 @@ int main() {
             _dev::BufferElement(1, 2, GL_FLOAT, sizeof(float)),
         };
 
-        test_mesh = std::make_unique<_dev::Mesh>(atlas_test.get());
+        test_mesh = std::make_unique<_dev::Mesh>(atlas_test);
         test_mesh->AttachBuffer(std::move(buffer), buffer_layout);
         test_mesh->AttachElementArrayBuffer(std::move(indices_buffer));
         test_mesh->Bake();
@@ -416,7 +421,7 @@ int main() {
         MeshProfile profile_quad(vertices, indices, nullptr);
 
         MeshProfile profile_minecraft_quad = profile_quad.TexScale(glm::vec2(1 / 16.0f, 1 / 16.0f));
-        profile_minecraft_quad.texture = atlas_test.get();
+        profile_minecraft_quad.texture = atlas_test;
 
         MeshProfile profile_2 = profile_quad;
         profile_2.texture = atlas_test->GetBound("wood_top");
@@ -457,7 +462,7 @@ int main() {
             10, 10,
             500, 200
         },
-        gui_tex.get(),
+        gui_tex,
         10
     ));
     root_gui->AppendChild(std::make_unique<GuiText>(GuiText(
@@ -466,10 +471,10 @@ int main() {
     )));
     root_gui->AppendChild(std::make_unique<GuiButton>(GuiButton(
         GuiArea{10, 10 + 16 + 60, 200, 30},
-        gui_tex.get(), 10
+        gui_tex, 10
     )));
 
-    shader = std::make_unique<Shader>(LoadShader(
+    shader = std::make_unique<ShaderProgram>(LoadShader(
         "/res/vert.glsl",
         "/res/frag.glsl"
     ));

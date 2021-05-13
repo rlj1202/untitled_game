@@ -77,12 +77,11 @@ private:
     unsigned int texture_id;
 };
 
-class TextureAtlas;
 class TextureBound : public ITexture {
     friend class TextureAtlas;
 
 public:
-    TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size, TextureAtlas* texture_atlas);
+    TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size, ITexture* texture);
 
     unsigned int GetId() override;
 
@@ -105,7 +104,7 @@ public:
     bool operator<(const TextureBound& o) const;
 
 private:
-    TextureAtlas* texture_atlas;
+    ITexture* texture;
 };
 
 /**
@@ -124,6 +123,7 @@ public:
         GLenum internal_format, GLenum format,
         const std::vector<TextureBound>& bounds
     );
+    TextureAtlas(std::unique_ptr<Texture> texture, const std::vector<TextureBound>& bounds);
 
     std::vector<TextureBound>& GetBounds();
     TextureBound* GetBound(std::string name);

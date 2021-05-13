@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <TextureAtlas>
+    <Name>minecraft_atlas</Name>
     <Path>./minecraft_atlas.png</Path>
     <Texture>
         <Name>grass</Name>

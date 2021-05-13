@@ -30,13 +30,30 @@ public:
 
 class Shader {
 public:
-    Shader(const char* vertex_shader_code, const char* fragment_shader_code);
-    Shader(const Shader& o) = delete;
+    Shader(GLenum type, const char* code);
+    Shader(const Shader* o) = delete;
     Shader(Shader&& o);
     ~Shader();
 
     Shader& operator=(const Shader& o) = delete;
     Shader& operator=(Shader&& o) noexcept;
+
+    unsigned int GetId() const;
+
+private:
+    unsigned int id;
+};
+
+class ShaderProgram {
+public:
+    ShaderProgram(std::initializer_list<Shader> shaders);
+    ShaderProgram(const char* vertex_shader_code, const char* fragment_shader_code);
+    ShaderProgram(const ShaderProgram& o) = delete;
+    ShaderProgram(ShaderProgram&& o);
+    ~ShaderProgram();
+
+    ShaderProgram& operator=(const ShaderProgram& o) = delete;
+    ShaderProgram& operator=(ShaderProgram&& o) noexcept;
 
     void Use();
 

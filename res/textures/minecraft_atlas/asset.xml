@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Asset>
+    <Type>texture_atlas</Type>
+
+    <Path>./texture.png</Path>
+    <SubTextures>
+        <SubTexture>
+            <Name>grass</Name>
+            
+            <Position>0 0</Position>
+            <Size>16 16</Size>
+        </SubTexture>
+        <SubTexture>
+            <Name>cobble_stone</Name>
+
+            <Position>0 16</Position>
+            <Size>16 16</Size>
+        </SubTexture>
+        <SubTexture>
+            <Name>sand</Name>
+
+            <Position>32 16</Position>
+            <Size>16 16</Size>
+        </SubTexture>
+        <SubTexture>
+            <Name>wood_side</Name>
+
+            <Position>64 16</Position>
+            <Size>16 16</Size>
+        </SubTexture>
+        <SubTexture>
+            <Name>wood_top</Name>
+
+            <Position>80 16</Position>
+            <Size>16 16</Size>
+        </SubTexture>
+    </SubTextures>
+</Asset>

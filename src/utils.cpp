@@ -15,7 +15,7 @@
 #define DEBUG
 #include "debug.h"
 
-Shader LoadShader(std::string vertex_shader, std::string fragment_shader) {
+ShaderProgram LoadShader(std::string vertex_shader, std::string fragment_shader) {
     std::ifstream vertex_shader_file(vertex_shader);
     std::ifstream fragment_shader_file(fragment_shader);
 
@@ -29,7 +29,7 @@ Shader LoadShader(std::string vertex_shader, std::string fragment_shader) {
     std::string vertex_shader_code = vertex_shader_stream.str();
     std::string fragment_shader_code = fragment_shader_stream.str();
 
-    return Shader(vertex_shader_code.c_str(), fragment_shader_code.c_str());
+    return ShaderProgram(vertex_shader_code.c_str(), fragment_shader_code.c_str());
 }
 
 Texture LoadTexture(std::string path) {

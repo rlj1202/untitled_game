@@ -6,7 +6,7 @@
 #include "graphics/shader.h"
 #include "graphics/texture.h"
 
-Shader LoadShader(std::string vertex_shader, std::string fragment_shader);
+ShaderProgram LoadShader(std::string vertex_shader, std::string fragment_shader);
 
 Texture LoadTexture(std::string path);
 

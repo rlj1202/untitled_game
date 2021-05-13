@@ -46,3 +46,95 @@ shader {
 }
 
 ```
+
+
+```
+
+/assets
+  /textures
+    /blocks
+      /
+    /minecraft_atlas.png
+    /minecraft_atlas.xml
+  /audios
+    /some_sound.mp3
+
+textures
+  minecraft_atlas
+  grass (refer: minecraft_atlas, pos: 0, 0, size: 16, 16)
+  cobble_stone (refer: minecraft_atlas, ...)
+  wood_top (refer: minecraft_atlas, ...)
+  wood_side (refer: minecraft_atlas, ...)
+  ...
+
+audios
+  some_audio.mp3
+  some_audio2.mp3
+  ...
+
+/res/textures/atlas.texatlas.xml
+/res/textures/atlas.tex.png
+/res/audios/some_audio.audio.mp3
+/res/models/some_model.mesh.obj
+/res/something/some_file.some_type.tar.gz
+
+/path/to/asset/name.type.internaltype
+
+```
+
+
+
+
+```
+/res
+  /textures
+    /some_texture.png
+    /some_atlas
+      /texture.png
+      /asset.xml
+  /audios
+    /some_audio.mp3
+  /models
+    /some_model.obj
+  /shaders
+    /terrain_shader
+      /asset.xml
+      /vertex_shader.glsl
+      /fragment_shader.glsl
+```
+
+in asset.xml file:
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<Asset>
+  <Type>texture_atlas</Type>
+  
+  <Path>./texture.png</Path>
+  <SubTextures>
+    <SubTexture>
+      <Name>grass</Name>
+      <Pos>0 0</Pos>
+      <Size>16 16</Size>
+    </SubTexture>
+    ...
+  </SubTextures>
+</Asset>
+```
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<Asset>
+  <Type>shader_program</Type>
+  
+  <Shader>
+    <Path>./vert.glsl</Path>
+    <ShaderType>Vertex</ShaderType>
+  </Shader>
+  <Shader>
+    <Path>./frag.glsl</Path>
+    <ShaderType>Fragment</ShaderType>
+  </Shader>
+</Asset>
+```

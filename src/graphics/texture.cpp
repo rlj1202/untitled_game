@@ -152,13 +152,13 @@ glm::mat4 Texture::GetTextureTransformationMatrix() {
     return glm::mat4(1);
 }
 
-TextureBound::TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size, TextureAtlas* texture_atlas)
-    : name(name), pos(pos), size(size), texture_atlas(texture_atlas) {
+TextureBound::TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size, ITexture* texture)
+    : name(name), pos(pos), size(size), texture(texture) {
 }
 
 unsigned int TextureBound::GetId() {
-    if (texture_atlas)
-        return texture_atlas->GetId();
+    if (texture)
+        return texture->GetId();
     else
         return -1;
 }
@@ -172,21 +172,21 @@ unsigned int TextureBound::GetHeight() {
 }
 
 void TextureBound::Bind(unsigned int active) {
-    if (texture_atlas) {
-        texture_atlas->Bind(active);
+    if (texture) {
+        texture->Bind(active);
     }
 }
 
 glm::mat4 TextureBound::GetTextureTransformationMatrix() {
     glm::mat4 mat(1);
     mat = glm::translate(mat, glm::vec3(
-        pos.x / (float) texture_atlas->GetWidth(),
-        pos.y / (float) texture_atlas->GetHeight(),
+        pos.x / (float) texture->GetWidth(),
+        pos.y / (float) texture->GetHeight(),
         0
     ));
     mat = glm::scale(mat, glm::vec3(
-        size.x / (float) texture_atlas->GetWidth(),
-        size.y / (float) texture_atlas->GetHeight(),
+        size.x / (float) texture->GetWidth(),
+        size.y / (float) texture->GetHeight(),
         0
     ));
 
@@ -215,10 +215,23 @@ TextureAtlas::TextureAtlas(
 {
     std::sort(this->bounds.begin(), this->bounds.end());
     for (auto& bound : this->bounds) {
-        bound.texture_atlas = this;
+        bound.texture = this;
     }
 
     // TODO: Make skyline of rect_pack variable using given bounds.
+}
+
+TextureAtlas::TextureAtlas(
+    std::unique_ptr<Texture> texture,
+    const std::vector<TextureBound>& bounds
+) : Texture(std::move(*texture.get())),
+    bounds(bounds),
+    rect_pack(texture->GetWidth(), texture->GetHeight()) {
+    
+    std::sort(this->bounds.begin(), this->bounds.end());
+    for (auto& bound : this->bounds) {
+        bound.texture = this;
+    }
 }
 
 std::vector<TextureBound>& TextureAtlas::GetBounds() {

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Assets>
+    <Include>./some_file.xml</Include>
+    <Asset>
+        <Type>texture</Type>
+        <Name>some_texture_0</Name>
+        <Path>./some_texture_0.jpeg</Path>
+    </Asset>
+    <Texture>
+        <Name>container</Name>
+        <Path>./container.jpg</Path>
+    </Texture>
+    <TextureAtlas>
+        <Name>minecraft_atlas</Name>
+        <Path>./texture_atlas.xml</Path>
+    </TextureAtlas>
+</Assets>
