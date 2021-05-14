@@ -227,10 +227,10 @@ void mainLoop() {
     tex->Bind();
     mesh->Draw();
 
-    TextureBound* bound;
-    if ((bound = atlas_test->GetBound("cobble_stone"))) {
-        shader->SetUniform("tex_transform", bound->GetTextureTransformationMatrix());
-        bound->Bind();
+    SubTexture* sub_texture;
+    if ((sub_texture = atlas_test->GetSubTexture("cobble_stone"))) {
+        shader->SetUniform("tex_transform", sub_texture->GetTextureTransformationMatrix());
+        sub_texture->Bind();
 
         quad_mesh->Draw();
     }
@@ -424,10 +424,10 @@ int main() {
         profile_minecraft_quad.texture = atlas_test;
 
         MeshProfile profile_2 = profile_quad;
-        profile_2.texture = atlas_test->GetBound("wood_top");
+        profile_2.texture = atlas_test->GetSubTexture("wood_top");
 
         MeshProfile profile_3 = profile_quad;
-        profile_3.texture = atlas_test->GetBound("cobble_stone");
+        profile_3.texture = atlas_test->GetSubTexture("cobble_stone");
 
         test_model->Add(profile_minecraft_quad.Translate(glm::vec3(-1, 0, 0)));
         test_model->Add(profile_minecraft_quad.Translate(glm::vec3(-2, 0, 0)));
@@ -438,10 +438,10 @@ int main() {
 
     // Chunk and BlockTypes
     blocktype_grass = std::make_unique<BlockType>(
-        "grass", atlas_test->GetBound("grass")
+        "grass", atlas_test->GetSubTexture("grass")
     );
     blocktype_wood_top = std::make_unique<BlockType>(
-        "wood_top", atlas_test->GetBound("wood_top")
+        "wood_top", atlas_test->GetSubTexture("wood_top")
     );
     chunk = std::make_unique<Chunk>();
     for (int r = 0; r < CHUNK_SIZE; r++) {

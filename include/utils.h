@@ -8,10 +8,6 @@
 
 ShaderProgram LoadShader(std::string vertex_shader, std::string fragment_shader);
 
-Texture LoadTexture(std::string path);
-
-std::unique_ptr<TextureAtlas> LoadTextureAtlas(std::string path);
-
 /**
  * @brief Get total momory size in bytes.
  */

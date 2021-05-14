@@ -77,11 +77,11 @@ private:
     unsigned int texture_id;
 };
 
-class TextureBound : public ITexture {
+class SubTexture : public ITexture {
     friend class TextureAtlas;
 
 public:
-    TextureBound(std::string name, glm::ivec2 pos, glm::ivec2 size, ITexture* texture);
+    SubTexture(std::string name, glm::ivec2 pos, glm::ivec2 size, ITexture* texture);
 
     unsigned int GetId() override;
 
@@ -101,7 +101,7 @@ public:
     /// width and height of bound.
     glm::ivec2 size;
 
-    bool operator<(const TextureBound& o) const;
+    bool operator<(const SubTexture& o) const;
 
 private:
     ITexture* texture;
@@ -121,12 +121,12 @@ public:
         unsigned int width, unsigned int height, unsigned int channels,
         unsigned char* data,
         GLenum internal_format, GLenum format,
-        const std::vector<TextureBound>& bounds
+        const std::vector<SubTexture>& sub_textures
     );
-    TextureAtlas(std::unique_ptr<Texture> texture, const std::vector<TextureBound>& bounds);
+    TextureAtlas(std::unique_ptr<Texture> texture, const std::vector<SubTexture>& sub_textures);
 
-    std::vector<TextureBound>& GetBounds();
-    TextureBound* GetBound(std::string name);
+    std::vector<SubTexture>& GetSubTextures();
+    SubTexture* GetSubTexture(std::string name);
 
     /**
      * @brief Find appropriate place given width and height.
@@ -147,7 +147,7 @@ public:
 private:
     RectPack rect_pack;
 
-    std::vector<TextureBound> bounds;
+    std::vector<SubTexture> sub_textures;
 };
 
 #endif

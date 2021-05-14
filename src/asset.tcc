@@ -210,7 +210,7 @@ std::unique_ptr<TextureAtlas> LoadAsset(std::filesystem::path path) {
         return nullptr;
     }
 
-    std::vector<TextureBound> bounds;
+    std::vector<SubTexture> bounds;
     for (auto sub_texture : doc->child("Asset").child("SubTextures").children("SubTexture")) {
         auto name = sub_texture.child("Name").child_value();
         auto pos = sub_texture.child("Position").child_value();
@@ -225,7 +225,7 @@ std::unique_ptr<TextureAtlas> LoadAsset(std::filesystem::path path) {
         DEBUG_STDOUT("\tTexture in atlas : %s (%d, %d) (%d, %d)\n",
             name, pos_x, pos_y, size_width, size_height);
 
-        auto bound = TextureBound(
+        auto bound = SubTexture(
             std::string(name),
             glm::ivec2(pos_x, pos_y),
             glm::ivec2(size_width, size_height),
