@@ -11,11 +11,11 @@ Model::Model() {
 
 }
 
-void Model::Add(MeshProfile&& profile) {
+void Model::Add(MeshProfile& profile) {
     if (profile.texture == nullptr) return; // TODO:
 
     mesh_profiles[profile.texture->GetId()].Append(
-        profile.TexMul(profile.texture->GetTextureTransformationMatrix())
+        profile.Clone().TexMul(profile.texture->GetTextureTransformationMatrix())
     );
 }
 

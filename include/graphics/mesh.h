@@ -15,7 +15,14 @@
 #include "debug.h"
 
 /**
- * @brief Minimum unit of drawable thing. Contains information of primitives and texture.
+ * @brief Minimum unit of drawable thing. Contains information of primitives and textures.
+ * @details
+ * Mesh class contains minimal and complete informations to draw thing in scene.
+ * Primitives, which have coordinates and tex coordinates and textures, such as diffuse or
+ * normal map, etc.
+ * 
+ * Single mesh object can be drawn alone but it can be batched as one to draw together which
+ * have same textures.
  */
 class IMesh {
 public:
@@ -29,6 +36,7 @@ public:
 
 class Vertex {
 public:
+    Vertex();
     Vertex(glm::vec3 position, glm::vec2 tex_coord);
     
     glm::vec3 position;
@@ -40,19 +48,23 @@ public:
     MeshProfile();
     MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, ITexture* texture);
 
-    MeshProfile Translate(glm::vec3 v);
-    MeshProfile Scale(glm::vec3 v);
-    MeshProfile Rotate(float angle, glm::vec3 dir);
+    MeshProfile Clone() const;
 
-    MeshProfile Mul(glm::mat4 mat);
+    MeshProfile& Translate(glm::vec3 v);
+    MeshProfile& Scale(glm::vec3 v);
+    MeshProfile& Rotate(float angle, glm::vec3 dir);
+
+    MeshProfile& Mul(glm::mat4 mat);
+
+    MeshProfile& TexTranslate(glm::vec2 v);
+    MeshProfile& TexScale(glm::vec2 v);
+
+    MeshProfile& TexMul(glm::mat4 mat);
+
+    MeshProfile& SetTexture(ITexture* texture);
 
     MeshProfile& Append(const MeshProfile &o);
     MeshProfile& Append(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
-
-    MeshProfile TexTranslate(glm::vec2 v);
-    MeshProfile TexScale(glm::vec2 v);
-
-    MeshProfile TexMul(glm::mat4 mat);
 
     MeshProfile& Clear();
 
@@ -185,7 +197,7 @@ private:
  */
 class Mesh : public IMesh {
 public:
-    Mesh(ITexture* texture);
+    Mesh(std::vector<ITexture*> textures);
     Mesh(const Mesh& o) = delete;
     Mesh(Mesh&& o);
     ~Mesh();
@@ -207,7 +219,7 @@ private:
     std::vector<std::unique_ptr<IBuffer>> buffers;
     std::unique_ptr<Buffer<unsigned int>> indices_buffer;
 
-    ITexture* texture;
+    std::vector<ITexture*> textures;
 };
 
 // end of temporary namespace

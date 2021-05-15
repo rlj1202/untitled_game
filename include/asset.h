@@ -39,6 +39,8 @@ public:
 
     T* GetAsset(const std::wstring asset_path);
 
+    std::vector<std::wstring> GetLoadedAssetList() const;
+
 private:
     std::unordered_map<std::wstring, std::unique_ptr<T>> assets;
 };

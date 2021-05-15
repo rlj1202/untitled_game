@@ -78,7 +78,7 @@ void Chunk::Bake() {
         0, 1, 2,
         0, 2, 3,
     };
-    MeshProfile meshprofile_quad(vertices, indices, nullptr);
+    const MeshProfile meshprofile_quad(vertices, indices, nullptr);
 
     model = std::make_unique<Model>();
 
@@ -86,8 +86,7 @@ void Chunk::Bake() {
         for (int x = 0; x < CHUNK_SIZE; x++) {
             Block& block = blocks[y][x];
 
-            meshprofile_quad.texture = block.GetType()->texture;
-            model->Add(meshprofile_quad.Translate(glm::vec3(x, y, 0)));
+            model->Add(meshprofile_quad.Clone().Translate(glm::vec3(x, y, 0)).SetTexture(block.GetType()->texture));
         }
     }
 

@@ -36,6 +36,17 @@ T* AssetList<T>::GetAsset(const std::wstring asset_path) {
     return assets[asset_path].get();
 }
 
+template<typename T>
+std::vector<std::wstring> AssetList<T>::GetLoadedAssetList() const {
+    std::vector<std::wstring> result;
+
+    for (auto& pair : assets) {
+        result.push_back(pair.first);
+    }
+
+    return result;
+}
+
 AssetManager::AssetManager(std::filesystem::path root_dir)
     : root_dir(root_dir) {
 

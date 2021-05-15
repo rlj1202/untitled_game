@@ -335,6 +335,11 @@ int main() {
     tex = asset_manager->GetAsset<Texture>(L"textures/minecraft_atlas/texture");
     gui_tex = asset_manager->GetAsset<Texture>(L"textures/gui");
     atlas_test = asset_manager->GetAsset<TextureAtlas>(L"textures/minecraft_atlas");
+
+    std::vector<std::wstring> texture_asset_list = asset_manager->GetAssetList<Texture>()->GetLoadedAssetList();
+    for (auto asset_path : texture_asset_list) {
+        DEBUG_STDOUT("Texture Asset : %S\n", asset_path.c_str());
+    }
     
     // Meshes
     std::vector<Vertex> vertices = {
@@ -347,7 +352,7 @@ int main() {
         0, 1, 2,
         0, 2, 3,
     };
-    MeshProfile meshprofile_quad(vertices, indices, atlas_test);
+    const MeshProfile meshprofile_quad(vertices, indices, atlas_test);
 
     MeshProfile meshprofile_tilemap;
     int tilemap_size = 128;
@@ -359,15 +364,17 @@ int main() {
             int tex_y = index / 5;
 
             meshprofile_tilemap.Append(meshprofile_quad
-                // .rotate(glm::radians(45.0f), glm::vec3(0, 0, 1))
+                .Clone()
                 .TexScale(glm::vec2(1/16.0f, 1/16.0f))
                 .TexTranslate(glm::vec2(tex_x/16.0f, tex_y/16.0f))
-                .Translate(glm::vec3(x, y, 0)));
+                .Translate(glm::vec3(x, y, 0))
+            );
         }
     }
     mesh = std::make_unique<Mesh>(BuildMesh(meshprofile_tilemap));
     quad_mesh = std::make_unique<Mesh>(BuildMesh(
         meshprofile_quad
+            .Clone()
             .Translate(glm::vec3(-0.5f, -0.5f, 0.0f))
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
     ));
@@ -399,7 +406,7 @@ int main() {
             _dev::BufferElement(1, 2, GL_FLOAT, sizeof(float)),
         };
 
-        test_mesh = std::make_unique<_dev::Mesh>(atlas_test);
+        test_mesh = std::make_unique<_dev::Mesh>(std::vector<ITexture*>({atlas_test}));
         test_mesh->AttachBuffer(std::move(buffer), buffer_layout);
         test_mesh->AttachElementArrayBuffer(std::move(indices_buffer));
         test_mesh->Bake();
@@ -418,21 +425,16 @@ int main() {
             0, 1, 2,
             0, 2, 3,
         };
-        MeshProfile profile_quad(vertices, indices, nullptr);
+        const MeshProfile profile_quad(vertices, indices, nullptr);
 
-        MeshProfile profile_minecraft_quad = profile_quad.TexScale(glm::vec2(1 / 16.0f, 1 / 16.0f));
-        profile_minecraft_quad.texture = atlas_test;
+        const MeshProfile profile_minecraft_quad = profile_quad.Clone().TexScale(glm::vec2(1 / 16.0f, 1 / 16.0f)).SetTexture(atlas_test);
+        const MeshProfile profile_2 = profile_quad.Clone().SetTexture(atlas_test->GetSubTexture("wood_top"));
+        const MeshProfile profile_3 = profile_quad.Clone().SetTexture(atlas_test->GetSubTexture("cobble_stone"));
 
-        MeshProfile profile_2 = profile_quad;
-        profile_2.texture = atlas_test->GetSubTexture("wood_top");
-
-        MeshProfile profile_3 = profile_quad;
-        profile_3.texture = atlas_test->GetSubTexture("cobble_stone");
-
-        test_model->Add(profile_minecraft_quad.Translate(glm::vec3(-1, 0, 0)));
-        test_model->Add(profile_minecraft_quad.Translate(glm::vec3(-2, 0, 0)));
-        test_model->Add(profile_2.Translate(glm::vec3(-3, 0, 0)));
-        test_model->Add(profile_3.Translate(glm::vec3(-4, 0, 0)));
+        test_model->Add(profile_minecraft_quad.Clone().Translate(glm::vec3(-1, 0, 0)));
+        test_model->Add(profile_minecraft_quad.Clone().Translate(glm::vec3(-2, 0, 0)));
+        test_model->Add(profile_2.Clone().Translate(glm::vec3(-3, 0, 0)));
+        test_model->Add(profile_3.Clone().Translate(glm::vec3(-4, 0, 0)));
     }
     test_model->Bake();
 

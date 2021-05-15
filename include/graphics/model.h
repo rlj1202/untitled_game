@@ -28,7 +28,7 @@ public:
     /**
      * @brief Add mesh profile.
      */
-    void Add(MeshProfile&& profile);
+    void Add(MeshProfile& profile);
 
     /**
      * @brief Make meshes

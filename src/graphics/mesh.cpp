@@ -7,6 +7,10 @@
 #define DEBUG
 #include "debug.h"
 
+Vertex::Vertex() {
+
+}
+
 Vertex::Vertex(glm::vec3 position, glm::vec2 tex_coord)
     : position(position), tex_coord(tex_coord) {
 }
@@ -19,76 +23,71 @@ MeshProfile::MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int
     : vertices(vertices), indices(indices), texture(texture) {
 }
 
-MeshProfile MeshProfile::TexTranslate(glm::vec2 v) {
-    MeshProfile new_profile(*this);
+MeshProfile MeshProfile::Clone() const {
+    return *this;
+}
 
-    for (Vertex &vertex : new_profile.vertices) {
+MeshProfile& MeshProfile::TexTranslate(glm::vec2 v) {
+    for (Vertex& vertex : vertices) {
         vertex.tex_coord += v;
     }
 
-    return new_profile;
+    return *this;
 }
 
-MeshProfile MeshProfile::TexScale(glm::vec2 v) {
-    MeshProfile new_profile(*this);
-
-    for (Vertex &vertex : new_profile.vertices) {
+MeshProfile& MeshProfile::TexScale(glm::vec2 v) {
+    for (Vertex& vertex : vertices) {
         vertex.tex_coord *= v;
     }
 
-    return new_profile;
+    return *this;
 }
 
-MeshProfile MeshProfile::TexMul(glm::mat4 mat) {
-    MeshProfile new_profile(*this);
-
-    for (Vertex& vertex : new_profile.vertices) {
+MeshProfile& MeshProfile::TexMul(glm::mat4 mat) {
+    for (Vertex& vertex : vertices) {
         vertex.tex_coord = (mat * glm::vec4(vertex.tex_coord, 0, 1));
     }
 
-    return new_profile;
+    return *this;
 }
 
-MeshProfile MeshProfile::Translate(glm::vec3 v) {
-    MeshProfile new_profile(*this);
-
-    for (Vertex &vertex : new_profile.vertices) {
+MeshProfile& MeshProfile::Translate(glm::vec3 v) {
+    for (Vertex& vertex : vertices) {
         vertex.position += v;
     }
 
-    return new_profile;
+    return *this;
 }
 
-MeshProfile MeshProfile::Scale(glm::vec3 v) {
-    MeshProfile new_profile(*this);
-
-    for (Vertex &vertex : new_profile.vertices) {
+MeshProfile& MeshProfile::Scale(glm::vec3 v) {
+    for (Vertex& vertex : vertices) {
         vertex.position *= v;
     }
 
-    return new_profile;
+    return *this;
 }
 
-MeshProfile MeshProfile::Rotate(float angle, glm::vec3 dir) {
-    MeshProfile new_profile(*this);
-
+MeshProfile& MeshProfile::Rotate(float angle, glm::vec3 dir) {
     glm::mat4 mat = glm::rotate(angle, dir);
 
-    for (Vertex &vertex : new_profile.vertices) {
+    for (Vertex& vertex : vertices) {
         vertex.position = (mat * glm::vec4(vertex.position, 1));
     }
 
-    return new_profile;
+    return *this;
 }
 
-MeshProfile MeshProfile::Mul(glm::mat4 mat) {
-    MeshProfile new_profile(*this);
-
-    for (Vertex& vertex : new_profile.vertices) {
+MeshProfile& MeshProfile::Mul(glm::mat4 mat) {
+    for (Vertex& vertex : vertices) {
         vertex.position = (mat * glm::vec4(vertex.position, 1));
     }
 
-    return new_profile;
+    return *this;
+}
+
+MeshProfile& MeshProfile::SetTexture(ITexture* texture) {
+    this->texture = texture;
+    return *this;
 }
 
 MeshProfile& MeshProfile::Append(const MeshProfile &o) {
@@ -97,7 +96,8 @@ MeshProfile& MeshProfile::Append(const MeshProfile &o) {
     vertices.insert(vertices.end(), o.vertices.begin(), o.vertices.end());
 
     for (int index : o.indices) {
-        indices.push_back(index + cur_vertices);
+        indices.emplace_back(index + cur_vertices);
+        // indices.push_back(index + cur_vertices);
     }
 
     return *this;
@@ -109,7 +109,8 @@ MeshProfile& MeshProfile::Append(std::vector<Vertex>& vertices, std::vector<unsi
     this->vertices.insert(this->vertices.end(), vertices.begin(), vertices.end());
 
     for (int index : indices) {
-        this->indices.push_back(index + cur_vertices);
+        this->indices.emplace_back(index + cur_vertices);
+        // this->indices.push_back(index + cur_vertices);
     }
 
     return *this;
@@ -118,6 +119,8 @@ MeshProfile& MeshProfile::Append(std::vector<Vertex>& vertices, std::vector<unsi
 MeshProfile& MeshProfile::Clear() {
     vertices.clear();
     indices.clear();
+    vertices.reserve(16);
+    indices.reserve(16);
 
     return *this;
 }
@@ -180,7 +183,7 @@ std::vector<BufferElement>& BufferLayout::GetElements() {
     return elements;
 }
 
-Mesh::Mesh(ITexture* texture) : vao_id(0), texture(texture) {
+Mesh::Mesh(std::vector<ITexture*> textures) : vao_id(0), textures(textures) {
     indices_buffer = std::make_unique<Buffer<unsigned int>>(
         GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW
     );
@@ -275,7 +278,9 @@ void Mesh::Unbind() {
 
 void Mesh::Draw() {
     if (vao_id) {
-        texture->Bind();
+        for (int i = 0; i < textures.size(); i++) {
+            textures[i]->Bind(i);
+        }
         glBindVertexArray(vao_id);
         glDrawElements(GL_TRIANGLES, indices_buffer->Size(), GL_UNSIGNED_INT, (void*) 0);
     }

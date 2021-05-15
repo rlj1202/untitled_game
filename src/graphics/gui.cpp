@@ -58,6 +58,8 @@ void GuiRect::Draw(Canvas& canvas) {
 
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    vertices.reserve(16);
+    indices.reserve(16);
 
     int x_body = area.width - corner * 2;
     int y_body = area.height - corner * 2;
@@ -82,23 +84,35 @@ void GuiRect::Draw(Canvas& canvas) {
             if (r == 2) y = corner + y_body;
             if (r == 3) y = corner * 2 + y_body;
 
-            vertices.push_back(Vertex(
+            vertices.emplace_back(
                 glm::vec3(x + area.x, y + area.y, 0.0f),
                 glm::vec2(c / 3.0f, r / 3.0f)
-            ));
+            );
+            // vertices.push_back(Vertex(
+            //     glm::vec3(x + area.x, y + area.y, 0.0f),
+            //     glm::vec2(c / 3.0f, r / 3.0f)
+            // ));
         }
     }
     for (int r = 1; r < 4; r++) {
         for (int c = 1; c < 4; c++) {
             int index = c + r * 4;
 
-            indices.push_back(index);
-            indices.push_back(index - 4 - 1);
-            indices.push_back(index - 4);
+            indices.emplace_back(index);
+            indices.emplace_back(index - 4 - 1);
+            indices.emplace_back(index - 4);
 
-            indices.push_back(index);
-            indices.push_back(index - 1);
-            indices.push_back(index - 4 - 1);
+            indices.emplace_back(index);
+            indices.emplace_back(index - 1);
+            indices.emplace_back(index - 4 - 1);
+
+            // indices.push_back(index);
+            // indices.push_back(index - 4 - 1);
+            // indices.push_back(index - 4);
+
+            // indices.push_back(index);
+            // indices.push_back(index - 1);
+            // indices.push_back(index - 4 - 1);
         }
     }
 

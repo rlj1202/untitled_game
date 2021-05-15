@@ -63,6 +63,7 @@ void Canvas::Draw(Texture* texture, MeshProfile& profile) {
 
 void Canvas::DrawRect(Texture* texture, glm::vec3 pos, glm::vec2 size) {
     MeshProfile profile = quad_profile
+        .Clone()
         .Scale(glm::vec3(size, 0.0f))
         .Translate(pos);
     Draw(texture, profile);
@@ -90,6 +91,7 @@ int Canvas::DrawText(glm::vec3 pos, std::wstring text, int max_width) {
         }
 
         MeshProfile profile = font_quad_profile
+            .Clone()
             .Scale(glm::vec3(info.width, info.height, 0))
             .Translate(glm::vec3(
                 pos.x + info.bearing_x + cur_x,
