@@ -27,7 +27,7 @@ MeshProfile MeshProfile::Clone() const {
     return *this;
 }
 
-MeshProfile& MeshProfile::TexTranslate(glm::vec2 v) {
+MeshProfile& MeshProfile::TexTranslate(const glm::vec2& v) {
     for (Vertex& vertex : vertices) {
         vertex.tex_coord += v;
     }
@@ -35,7 +35,7 @@ MeshProfile& MeshProfile::TexTranslate(glm::vec2 v) {
     return *this;
 }
 
-MeshProfile& MeshProfile::TexScale(glm::vec2 v) {
+MeshProfile& MeshProfile::TexScale(const glm::vec2& v) {
     for (Vertex& vertex : vertices) {
         vertex.tex_coord *= v;
     }
@@ -43,7 +43,7 @@ MeshProfile& MeshProfile::TexScale(glm::vec2 v) {
     return *this;
 }
 
-MeshProfile& MeshProfile::TexMul(glm::mat4 mat) {
+MeshProfile& MeshProfile::TexMul(const glm::mat4& mat) {
     for (Vertex& vertex : vertices) {
         vertex.tex_coord = (mat * glm::vec4(vertex.tex_coord, 0, 1));
     }
@@ -51,7 +51,7 @@ MeshProfile& MeshProfile::TexMul(glm::mat4 mat) {
     return *this;
 }
 
-MeshProfile& MeshProfile::Translate(glm::vec3 v) {
+MeshProfile& MeshProfile::Translate(const glm::vec3& v) {
     for (Vertex& vertex : vertices) {
         vertex.position += v;
     }
@@ -59,7 +59,7 @@ MeshProfile& MeshProfile::Translate(glm::vec3 v) {
     return *this;
 }
 
-MeshProfile& MeshProfile::Scale(glm::vec3 v) {
+MeshProfile& MeshProfile::Scale(const glm::vec3& v) {
     for (Vertex& vertex : vertices) {
         vertex.position *= v;
     }
@@ -77,7 +77,7 @@ MeshProfile& MeshProfile::Rotate(float angle, glm::vec3 dir) {
     return *this;
 }
 
-MeshProfile& MeshProfile::Mul(glm::mat4 mat) {
+MeshProfile& MeshProfile::Mul(const glm::mat4& mat) {
     for (Vertex& vertex : vertices) {
         vertex.position = (mat * glm::vec4(vertex.position, 1));
     }
@@ -104,7 +104,7 @@ MeshProfile& MeshProfile::Append(const MeshProfile &o) {
     return *this;
 }
 
-MeshProfile& MeshProfile::Append(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) {
+MeshProfile& MeshProfile::Append(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) {
     int cur_vertices = this->vertices.size();
     
     this->vertices.insert(this->vertices.end(), vertices.begin(), vertices.end());

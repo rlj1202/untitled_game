@@ -21,12 +21,12 @@ class Canvas {
 public:
     Canvas();
 
-    void Draw(Texture* texture, std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
-    void Draw(Texture* texture, MeshProfile& profile);
-    void DrawLine(Texture* texture, glm::vec3 a, glm::vec3 b);
-    void DrawRect(Texture* texture, glm::vec3 pos, glm::vec2 size);
-    void DrawCircle(Texture* texture, glm::vec3 pos, float radius);
-    int DrawText(glm::vec3 pos, std::wstring text, int max_width);
+    void Draw(Texture* texture, const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
+    void Draw(Texture* texture, const MeshProfile& profile);
+    void DrawLine(Texture* texture, const glm::vec3& a, const glm::vec3& b);
+    void DrawRect(Texture* texture, const glm::vec3& pos, const glm::vec2& size);
+    void DrawCircle(Texture* texture, const glm::vec3& pos, float radius);
+    int DrawText(const glm::vec3& pos, const std::wstring& text, int max_width);
 
     void Render();
     void Clear();

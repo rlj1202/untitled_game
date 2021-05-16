@@ -102,31 +102,31 @@ void ShaderProgram::Use() {
 }
 
 template<>
-void ShaderProgram::SetUniform<bool>(const std::string& name, bool value) {
+void ShaderProgram::SetUniform<bool>(const std::string& name, const bool& value) {
     int loc = glGetUniformLocation(program_id, name.c_str());
     glUniform1i(loc, (int) value);
 }
 
 template<>
-void ShaderProgram::SetUniform<int>(const std::string& name, int value) {
+void ShaderProgram::SetUniform<int>(const std::string& name, const int& value) {
     int loc = glGetUniformLocation(program_id, name.c_str());
     glUniform1i(loc, value);
 }
 
 template<>
-void ShaderProgram::SetUniform<float>(const std::string& name, float value) {
+void ShaderProgram::SetUniform<float>(const std::string& name, const float& value) {
     int loc = glGetUniformLocation(program_id, name.c_str());
     glUniform1f(loc, value);
 }
 
 template<>
-void ShaderProgram::SetUniform<glm::vec4>(const std::string& name, glm::vec4 value) {
+void ShaderProgram::SetUniform<glm::vec4>(const std::string& name, const glm::vec4& value) {
     int loc = glGetUniformLocation(program_id, name.c_str());
     glUniform4f(loc, value.x, value.y, value.z, value.w);
 }
 
 template<>
-void ShaderProgram::SetUniform<glm::mat4>(const std::string& name, glm::mat4 value) {
+void ShaderProgram::SetUniform<glm::mat4>(const std::string& name, const glm::mat4& value) {
     int loc = glGetUniformLocation(program_id, name.c_str());
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
 }

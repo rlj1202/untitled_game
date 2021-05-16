@@ -50,21 +50,21 @@ public:
 
     MeshProfile Clone() const;
 
-    MeshProfile& Translate(glm::vec3 v);
-    MeshProfile& Scale(glm::vec3 v);
+    MeshProfile& Translate(const glm::vec3& v);
+    MeshProfile& Scale(const glm::vec3& v);
     MeshProfile& Rotate(float angle, glm::vec3 dir);
 
-    MeshProfile& Mul(glm::mat4 mat);
+    MeshProfile& Mul(const glm::mat4& mat);
 
-    MeshProfile& TexTranslate(glm::vec2 v);
-    MeshProfile& TexScale(glm::vec2 v);
+    MeshProfile& TexTranslate(const glm::vec2& v);
+    MeshProfile& TexScale(const glm::vec2& v);
 
-    MeshProfile& TexMul(glm::mat4 mat);
+    MeshProfile& TexMul(const glm::mat4& mat);
 
     MeshProfile& SetTexture(ITexture* texture);
 
     MeshProfile& Append(const MeshProfile &o);
-    MeshProfile& Append(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices);
+    MeshProfile& Append(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 
     MeshProfile& Clear();
 

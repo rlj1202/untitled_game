@@ -42,6 +42,7 @@
 #include "utils.h"
 #include "perlin.h"
 #include "asset.h"
+#include "camera.h"
 
 using json = nlohmann::json;
 
@@ -73,6 +74,9 @@ std::unique_ptr<Chunk> chunk;
 
 std::unique_ptr<BlockType> blocktype_grass;
 std::unique_ptr<BlockType> blocktype_wood_top;
+
+Camera world_camera;
+Camera gui_camera;
 
 float camera_x;
 float camera_y;
@@ -177,6 +181,13 @@ void renderGui(Canvas& canvas, IGuiNode* node) {
     }
 }
 
+void beforeLoop() {
+    shader->SetUniform("projection", glm::mat4(1));
+    shader->SetUniform("model", glm::mat4(1));
+    shader->SetUniform("tex_transform", glm::mat4(1));
+    shader->SetUniform("view", glm::mat4(1));
+}
+
 void mainLoop() {
     double current_time = glfwGetTime();
     frame_count++;
@@ -211,21 +222,10 @@ void mainLoop() {
     // Render world
     double begin_time_world = glfwGetTime();
 
-    glm::mat4 proj = glm::ortho(
-        -width / 2.0f, width / 2.0f,
-        -height / 2.0f, height / 2.0f,
-        -1.0f, 100.0f);
-    glm::mat4 model(1);
-    glm::mat4 tex_transform(1);
-    glm::mat4 view(1);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    view = glm::scale(view, glm::vec3(camera_scale, camera_scale, 0));
-    view = glm::translate(view, glm::vec3(-camera_x, -camera_y, 0.0f));
+    world_camera.SetScale(camera_scale);
+    world_camera.SetPosition(glm::vec3(camera_x, camera_y, 0.0f));
 
-    shader->SetUniform("projection", proj);
-    shader->SetUniform("model", model);
-    shader->SetUniform("tex_transform", tex_transform);
-    shader->SetUniform("view", view);
+    shader->SetUniform("view", world_camera.GetMatrix());
 
     tex->Bind();
     mesh->Draw();
@@ -237,8 +237,8 @@ void mainLoop() {
 
         quad_mesh->Draw();
     }
-
     shader->SetUniform("tex_transform", glm::mat4(1));
+
     atlas_test->Bind(); // TODO:
     chunk->GetModel().Draw();
 
@@ -253,17 +253,7 @@ void mainLoop() {
     // Render gui
     double begin_time_gui = glfwGetTime();
 
-    glm::mat4 gui_proj = glm::ortho(
-        0.0f, (float) width,
-        (float) height, 0.0f,
-        -0.1f, 100.0f
-    );
-    glm::mat4 init_mat(1);
-
-    shader->SetUniform("projection", gui_proj);
-    shader->SetUniform("view", init_mat);
-    shader->SetUniform("model", init_mat);
-    shader->SetUniform("tex_transform", init_mat);
+    shader->SetUniform("view", gui_camera.GetMatrix());
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -342,6 +332,17 @@ int main() {
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetMouseButtonCallback(window, mousebutton_callback);
     glfwSetCursorPosCallback(window, cursorpos_callback);
+
+    //
+    world_camera = Camera(glm::ortho(
+        -width / 2.0f, width / 2.0f,
+        -height / 2.0f, height / 2.0f,
+        -1.0f, 100.0f), glm::vec3(), camera_scale);
+    
+    gui_camera = Camera(glm::ortho(
+        0.0f, (float) width,
+        (float) height, 0.0f,
+        -0.1f, 100.0f));
 
     // Asset testing
     asset_manager = std::make_unique<AssetManager>("/res/");
@@ -496,6 +497,8 @@ int main() {
         "/res/frag.glsl"
     ));
     shader->Use();
+
+    beforeLoop();
 
 #ifdef EMSCRIPTEN
     emscripten_set_main_loop(&mainLoop, 0, 1);

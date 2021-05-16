@@ -58,7 +58,7 @@ public:
     void Use();
 
     template<typename T>
-    void SetUniform(const std::string& name, T value);
+    void SetUniform(const std::string& name, const T& value);
 
 private:
     unsigned int program_id;

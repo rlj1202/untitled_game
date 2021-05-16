@@ -53,15 +53,15 @@ Canvas::Canvas() {
     }
 }
 
-void Canvas::Draw(Texture* texture, std::vector<Vertex>& vertices, std::vector<unsigned int>& indices) {
+void Canvas::Draw(Texture* texture, const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) {
     mesh_profiles[texture].Append(vertices, indices);
 }
 
-void Canvas::Draw(Texture* texture, MeshProfile& profile) {
+void Canvas::Draw(Texture* texture, const MeshProfile& profile) {
     mesh_profiles[texture].Append(profile);
 }
 
-void Canvas::DrawRect(Texture* texture, glm::vec3 pos, glm::vec2 size) {
+void Canvas::DrawRect(Texture* texture, const glm::vec3& pos, const glm::vec2& size) {
     MeshProfile profile = quad_profile
         .Clone()
         .Scale(glm::vec3(size, 0.0f))
@@ -69,7 +69,7 @@ void Canvas::DrawRect(Texture* texture, glm::vec3 pos, glm::vec2 size) {
     Draw(texture, profile);
 }
 
-int Canvas::DrawText(glm::vec3 pos, std::wstring text, int max_width) {
+int Canvas::DrawText(const glm::vec3& pos, const std::wstring& text, int max_width) {
     float cur_x = 0;
     uint32_t prev_glyph_index = 0;
 
@@ -119,9 +119,9 @@ int Canvas::DrawText(glm::vec3 pos, std::wstring text, int max_width) {
 }
 
 void Canvas::Render() {
-    for (auto key : mesh_profiles) {
-        key.first->Bind();
-        mesh = std::make_unique<Mesh>(BuildMesh(key.second));
+    for (const auto pair : mesh_profiles) {
+        pair.first->Bind();
+        mesh = std::make_unique<Mesh>(BuildMesh(pair.second));
         mesh->Draw();
     }
 }
