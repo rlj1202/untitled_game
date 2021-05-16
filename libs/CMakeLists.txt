@@ -1,7 +1,10 @@
+set(ENTT_USE_LIBCPP OFF CACHE BOOL "")
+
 add_subdirectory(json)
 add_subdirectory(glm)
 add_subdirectory(pugixml)
 add_subdirectory(freetype-2.10.4)
+add_subdirectory(entt)
 # add_subdirectory(nanogui)
 
 add_library(stb INTERFACE)

@@ -26,6 +26,9 @@
 // zeux/pugixml
 #include <pugixml.hpp>
 
+// skypjack/entt
+#include <entt/entt.hpp>
+
 #define DEBUG
 #include "debug.h"
 
@@ -290,6 +293,18 @@ void mainLoop() {
 
 int main() {
     srand(std::time(nullptr));
+
+    // entt test
+    entt::registry registry;
+    for (int i = 0; i < 10; i++) {
+        const auto entity = registry.create();
+        registry.emplace<int>(entity, i);
+    }
+
+    auto view = registry.view<int>();
+    view.each([](int& test) {
+        DEBUG_STDOUT("Entt : %d\n", test);
+    });
 
     // using json test
     // json test;

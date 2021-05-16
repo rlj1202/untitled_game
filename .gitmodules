@@ -13,3 +13,7 @@
 [submodule "libs/pugixml"]
 	path = libs/pugixml
 	url = https://github.com/zeux/pugixml
+
+[submodule "libs/entt"]
+	path = libs/entt
+	url = https://github.com/skypjack/entt.git

@@ -87,6 +87,7 @@ MeshProfile& MeshProfile::Mul(glm::mat4 mat) {
 
 MeshProfile& MeshProfile::SetTexture(ITexture* texture) {
     this->texture = texture;
+
     return *this;
 }
 
