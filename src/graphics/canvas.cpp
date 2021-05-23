@@ -119,6 +119,9 @@ int Canvas::DrawText(const glm::vec3& pos, const std::wstring& text, int max_wid
 }
 
 void Canvas::Render() {
+    // FIXME:
+    // I don't know why but if i change this code to 'const auto& pair : mesh_profiles',
+    // program runs fucking incredibly slow. About 100 times. WTF
     for (const auto pair : mesh_profiles) {
         pair.first->Bind();
         mesh = std::make_unique<Mesh>(BuildMesh(pair.second));

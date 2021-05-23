@@ -46,7 +46,7 @@ public:
 class MeshProfile {
 public:
     MeshProfile();
-    MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, ITexture* texture);
+    MeshProfile(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices, ITexture* texture);
 
     MeshProfile Clone() const;
 

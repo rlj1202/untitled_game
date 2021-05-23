@@ -2,6 +2,9 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#define DEBUG
+#include "debug.h"
+
 Camera::Camera() : projection_mat(1), position(0), scale(1.0f) {
     Calculate();
 }
@@ -47,7 +50,19 @@ float Camera::GetScale() const {
     return scale;
 }
 
+glm::vec3 Camera::GetWorldCoords(const glm::vec3& homogeneous_coord) {
+    // result_mat_inv = translate^-1 * scale^1 * projection_mat^-1
+    result_mat_inv = glm::translate(glm::mat4(1), position);
+    result_mat_inv = glm::scale(result_mat_inv, glm::vec3(1.0f / scale, 1.0f / scale, 0));
+    result_mat_inv = result_mat_inv * glm::inverse(projection_mat);
+
+    return result_mat_inv * glm::vec4(homogeneous_coord, 1.0f);
+}
+
 void Camera::Calculate() {
+    // result_mat = projection_mat * scale * translate
+    // A = projection_mat * scale * translate * B
+    // translate^-1 * scale^-1 * projection_mat^-1 * A = B
     result_mat = glm::scale(projection_mat, glm::vec3(scale, scale, 0));
     result_mat = glm::translate(result_mat, -position);
 }

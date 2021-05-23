@@ -44,14 +44,13 @@
 #include "asset.h"
 #include "camera.h"
 
+#include "luvoasi/window.h"
+
 using json = nlohmann::json;
 
 int width = 800;
 int height = 600;
 std::string title = "untitled_game";
-
-// glfw
-GLFWwindow* window;
 
 std::unique_ptr<AssetManager> asset_manager;
 
@@ -62,10 +61,12 @@ std::unique_ptr<_dev::Mesh> test_mesh;
 // std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
 
 std::unique_ptr<Model> test_model;
+std::unique_ptr<Model> character_model;
 
 Texture*      tex;
 Texture*      gui_tex;
 TextureAtlas* atlas_test;
+Texture*      character_test_tex;
 
 std::unique_ptr<Canvas>   canvas;
 std::unique_ptr<IGuiNode> root_gui;
@@ -74,6 +75,8 @@ std::unique_ptr<Chunk> chunk;
 
 std::unique_ptr<BlockType> blocktype_grass;
 std::unique_ptr<BlockType> blocktype_wood_top;
+
+std::unique_ptr<Luvoasi::Window> luvoasi_window;
 
 Camera world_camera;
 Camera gui_camera;
@@ -124,52 +127,72 @@ bool recurMouseDragEvent(IGuiNode* node, glm::vec2 pos, glm::vec2 rel, int butto
     return false;
 }
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int modifier) {
+bool key_callback(Luvoasi::KeyEvent& event) {
     // DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
     // DEBUG_STDOUT("camera : %f %f\n", camera_x, camera_y);
 
-    if (key == GLFW_KEY_KP_SUBTRACT) {
+    if (event.GetKey() == GLFW_KEY_KP_SUBTRACT) {
         camera_scale /= 1.1;
-    } else if (key == GLFW_KEY_KP_ADD) {
+    } else if (event.GetKey() == GLFW_KEY_KP_ADD) {
         camera_scale *= 1.1;
     }
+
+    return true;
 }
 
-void scroll_callback(GLFWwindow *window, double x, double y) {
+bool scroll_callback(Luvoasi::ScrollEvent& event) {
     // DEBUG_STDOUT("scroll callback : %f %f\n", x, y);
 
-    if (y > 0) {
+    if (event.GetYOffset() > 0) {
         camera_scale /= 1.1;
-    } else if (y < 0) {
+    } else if (event.GetYOffset() < 0) {
         camera_scale *= 1.1;
     }
     camera_scale = std::max(camera_scale, 1.0f);
+
+    return true;
 }
 
-void mousebutton_callback(GLFWwindow *window, int button, int action, int mods) {
+bool mousebutton_callback(Luvoasi::MouseButtonEvent& event) {
     double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
+    event.GetWindow()->GetCursorPos(&xpos, &ypos);
     glm::vec2 cur_pos(xpos, ypos);
 
     // DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
 
-    recurMouseButtonEvent(root_gui.get(), cur_pos, button, action, mods);
+    recurMouseButtonEvent(root_gui.get(), cur_pos, event.GetButton(), event.GetAction(), event.GetAction());
 
-    if (action == GLFW_PRESS) {
+    if (event.GetAction() == GLFW_PRESS) {
         prev_cursor_pos = cur_pos;
-        prev_cursor_button = button;
+        prev_cursor_button = event.GetButton();
     }
+
+    if (event.GetButton() == GLFW_MOUSE_BUTTON_1 && event.GetAction() == GLFW_RELEASE) {
+        glm::vec3 homogeneous_coord(
+            xpos * 2.0f / width - 1.0f,
+            -(ypos * 2.0f / height - 1.0f),
+            1.0f);
+        glm::vec3 world_coord = world_camera.GetWorldCoords(homogeneous_coord);
+
+        DEBUG_STDOUT("mouse rel : %f %f\n", xpos, ypos);
+        DEBUG_STDOUT("homogenous coord : %f %f\n", homogeneous_coord.x, homogeneous_coord.y);
+        DEBUG_STDOUT("world coord : %f %f\n", world_coord.x, world_coord.y);
+    }
+
+    return true;
 }
 
-void cursorpos_callback(GLFWwindow *window, double xpos, double ypos) {
-    if (glfwGetMouseButton(window, prev_cursor_button) == GLFW_PRESS) {
-        glm::vec2 cur_pos(xpos, ypos);
+bool cursorpos_callback(Luvoasi::CursorPosEvent& event) {
+    if (event.GetWindow()->GetMouseButton(prev_cursor_button) == GLFW_PRESS) {
+        glm::vec2 cur_pos(event.GetX(), event.GetY());
         glm::vec2 delta = cur_pos - prev_cursor_pos;
 
         recurMouseDragEvent(root_gui.get(), cur_pos, delta, prev_cursor_button, 0);
 
         prev_cursor_pos = cur_pos;
     }
+
+    return true;
 }
 
 void renderGui(Canvas& canvas, IGuiNode* node) {
@@ -214,12 +237,17 @@ void mainLoop() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     float speed = 0.05f;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera_x += -speed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera_x +=  speed;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera_y +=  speed;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera_y += -speed;
+    if (luvoasi_window->GetKey(GLFW_KEY_A) == GLFW_PRESS) camera_x += -speed;
+    if (luvoasi_window->GetKey(GLFW_KEY_D) == GLFW_PRESS) camera_x +=  speed;
+    if (luvoasi_window->GetKey(GLFW_KEY_W) == GLFW_PRESS) camera_y +=  speed;
+    if (luvoasi_window->GetKey(GLFW_KEY_S) == GLFW_PRESS) camera_y += -speed;
 
     // Render world
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+
     double begin_time_world = glfwGetTime();
 
     world_camera.SetScale(camera_scale);
@@ -245,6 +273,9 @@ void mainLoop() {
     test_mesh->Draw();
 
     test_model->Draw();
+
+    character_test_tex->Bind(); // TODO:
+    character_model->Draw();
     
     // End render world
     double end_time_world = glfwGetTime();
@@ -254,11 +285,6 @@ void mainLoop() {
     double begin_time_gui = glfwGetTime();
 
     shader->SetUniform("view", gui_camera.GetMatrix());
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
     // Draw GUI
     renderGui(*canvas, root_gui.get());
@@ -277,8 +303,8 @@ void mainLoop() {
     double elapsed_time = end_time - current_time;
     elapsed_time_sum += elapsed_time;
 
-    glfwSwapBuffers(window);
-    glfwPollEvents();
+    luvoasi_window->SwapBuffers();
+    luvoasi_window->PollEvents();
 }
 
 int main() {
@@ -317,21 +343,14 @@ int main() {
     }
 
     // start of program
-    if (!glfwInit())
-        return -1;
+    luvoasi_window = std::move(Luvoasi::CreateWindow(width, height, title.c_str()));
+    assert(luvoasi_window);
 
-    window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-    if (!window) {
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(window);
-
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-    glfwSetMouseButtonCallback(window, mousebutton_callback);
-    glfwSetCursorPosCallback(window, cursorpos_callback);
+    luvoasi_window->Bind();
+    luvoasi_window->AddKeyEventHandler(key_callback);
+    luvoasi_window->AddScrollEventHandler(scroll_callback);
+    luvoasi_window->AddMouseButtonEventHandler(mousebutton_callback);
+    luvoasi_window->AddCursorPosEventHandler(cursorpos_callback);
 
     //
     world_camera = Camera(glm::ortho(
@@ -351,6 +370,12 @@ int main() {
     tex = asset_manager->GetAsset<Texture>(L"textures/minecraft_atlas/texture");
     gui_tex = asset_manager->GetAsset<Texture>(L"textures/gui");
     atlas_test = asset_manager->GetAsset<TextureAtlas>(L"textures/minecraft_atlas");
+    character_test_tex = asset_manager->GetAsset<Texture>(L"textures/character_test");
+
+    assert(tex);
+    assert(gui_tex);
+    assert(atlas_test);
+    assert(character_test_tex);
 
     std::vector<std::wstring> texture_asset_list = asset_manager->GetAssetList<Texture>()->GetLoadedAssetList();
     for (auto asset_path : texture_asset_list) {
@@ -429,20 +454,21 @@ int main() {
     }
 
     // Model
-    test_model = std::make_unique<Model>();
-    {
-        std::vector<Vertex> vertices = {
+    const MeshProfile profile_quad(
+        std::vector<Vertex>({
             Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
             Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
             Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
             Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-        };
-        std::vector<unsigned int> indices = {
+        }),
+        std::vector<unsigned int>({
             0, 1, 2,
             0, 2, 3,
-        };
-        const MeshProfile profile_quad(vertices, indices, nullptr);
+        }),
+        nullptr);
 
+    test_model = std::make_unique<Model>();
+    {
         const MeshProfile profile_minecraft_quad = profile_quad.Clone().TexScale(glm::vec2(1 / 16.0f, 1 / 16.0f)).SetTexture(atlas_test);
         const MeshProfile profile_2 = profile_quad.Clone().SetTexture(atlas_test->GetSubTexture("wood_top"));
         const MeshProfile profile_3 = profile_quad.Clone().SetTexture(atlas_test->GetSubTexture("cobble_stone"));
@@ -453,6 +479,10 @@ int main() {
         test_model->Add(profile_3.Clone().Translate(glm::vec3(-4, 0, 0)));
     }
     test_model->Bake();
+
+    character_model = std::make_unique<Model>();
+    character_model->Add(profile_quad.Clone().SetTexture(character_test_tex));
+    character_model->Bake();
 
     // Chunk and BlockTypes
     blocktype_grass = std::make_unique<BlockType>(
@@ -503,12 +533,10 @@ int main() {
 #ifdef EMSCRIPTEN
     emscripten_set_main_loop(&mainLoop, 0, 1);
 #else
-    while (!glfwWindowShouldClose(window)) {
+    while (!luvoasi_window->ShouldClose()) {
         mainLoop();
     }
 #endif
-
-    glfwTerminate();
 
     return 0;
 }

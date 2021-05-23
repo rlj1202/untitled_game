@@ -19,6 +19,8 @@ public:
     const glm::vec3& GetPosition() const;
     float GetScale() const;
 
+    glm::vec3 GetWorldCoords(const glm::vec3& homogeneous_coord);
+
 private:
     glm::mat4 projection_mat;
     glm::vec3 position;
@@ -26,6 +28,7 @@ private:
     float scale;
 
     glm::mat4 result_mat;
+    glm::mat4 result_mat_inv;
 
     void Calculate();
 };

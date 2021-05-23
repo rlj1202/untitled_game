@@ -19,7 +19,7 @@ MeshProfile::MeshProfile()
     : vertices(std::vector<Vertex>()), indices(std::vector<unsigned int>()) {
 }
 
-MeshProfile::MeshProfile(std::vector<Vertex> &vertices, std::vector<unsigned int> &indices, ITexture* texture)
+MeshProfile::MeshProfile(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices, ITexture* texture)
     : vertices(vertices), indices(indices), texture(texture) {
 }
 

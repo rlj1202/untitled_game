@@ -19,24 +19,35 @@ enable_testing()
 add_subdirectory(libs)
 add_subdirectory(test)
 
+# Gathering source files
 file(GLOB SOURCES
     src/*.cpp
     src/graphics/*.cpp
+    
+    src/luvoasi/*.cpp
+    src/luvoasi/graphics/*.cpp
 )
 
 if (EMSCRIPTEN)
-    file(GLOB_RECURSE PLATFORM_SOURCES src/platforms/*_webgl.cpp)
+    file(GLOB_RECURSE PLATFORM_SOURCES
+        src/platforms/*_webgl.cpp
+    )
 elseif (linux)
-    file(GLOB_RECURSE PLATFORM_SOURCES src/platforms/*_linux.cpp)
+    file(GLOB_RECURSE PLATFORM_SOURCES
+        src/platforms/*_linux.cpp
+    )
 elseif (CYGWIN)
 elseif (APPLE)
 elseif (WIN32)
 endif()
 
-set(CMAKE_EXECUTABLE_SUFFIX ".html")
+file(GLOB_RECURSE GRAPHICS_SOURCES
+    src/platforms/*_opengl.cpp
+    src/platforms/*_glfw.cpp
+)
 
 add_executable(${PROJECT_NAME}
-    ${SOURCES} ${PLATFORM_SOURCES}
+    ${SOURCES} ${PLATFORM_SOURCES} ${GRAPHICS_SOURCES}
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -47,6 +58,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 if (EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+
     set_target_properties(${PROJECT_NAME}
         PROPERTIES LINK_FLAGS "\
                               -fexceptions \
