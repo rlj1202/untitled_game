@@ -21,8 +21,10 @@ public:
     uint32_t GetHeight() const override;
 
     void GetCursorPos(double* x, double* y) const override;
-    uint32_t GetKey(uint32_t key) const override;
-    uint32_t GetMouseButton(uint32_t button) const override;
+    KeyState GetKey(Key key) const override;
+    KeyState GetMouseButton(MouseButton button) const override;
+
+    double GetTime() const override;
 
     bool ShouldClose() const override;
 

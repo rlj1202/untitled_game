@@ -6,7 +6,7 @@ uint32_t GLFWWindow::s_window_count = 0;
 
 void GLFWWindow::KeyEventCallback(GLFWwindow* window, int key, int scancode, int action, int modifiers) {
     GLFWWindow* m_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    KeyEvent event(m_window, key, scancode, action, modifiers);
+    KeyEvent event(m_window, (Key) key, scancode, (KeyState) action, modifiers);
     m_window->m_key_event(event);
 }
 
@@ -18,7 +18,7 @@ void GLFWWindow::ScrollEventCallback(GLFWwindow* window, double x, double y) {
 
 void GLFWWindow::MouseButtonEventCallback(GLFWwindow* window, int button, int action, int modifiers) {
     GLFWWindow* m_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    MouseButtonEvent event(m_window, button, action, modifiers);
+    MouseButtonEvent event(m_window, (MouseButton) button, (KeyState) action, modifiers);
     m_window->m_mouse_button_event(event);
 }
 
@@ -92,12 +92,16 @@ void GLFWWindow::GetCursorPos(double* x, double* y) const {
     glfwGetCursorPos(m_window, x, y);
 }
 
-uint32_t GLFWWindow::GetKey(uint32_t key) const {
-    return glfwGetKey(m_window, key);
+KeyState GLFWWindow::GetKey(Key key) const {
+    return (KeyState) glfwGetKey(m_window, (int32_t) key);
 }
 
-uint32_t GLFWWindow::GetMouseButton(uint32_t button) const {
-    return glfwGetMouseButton(m_window, button);
+KeyState GLFWWindow::GetMouseButton(MouseButton button) const {
+    return (KeyState) glfwGetMouseButton(m_window, (int32_t) button);
+}
+
+double GLFWWindow::GetTime() const {
+    return glfwGetTime();
 }
 
 bool GLFWWindow::ShouldClose() const {

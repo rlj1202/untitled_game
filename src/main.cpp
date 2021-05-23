@@ -12,8 +12,7 @@
 #include <emscripten.h>
 #endif
 
-// glfw, gles3
-#include <GLFW/glfw3.h>
+// gles3
 #include <GLES3/gl3.h>
 
 // glm
@@ -93,11 +92,11 @@ double elapsed_time_sum_world;
 double elapsed_time_sum_gui;
 
 glm::vec2 prev_cursor_pos;
-int prev_cursor_button;
+Luvoasi::MouseButton prev_cursor_button;
 
-bool recurMouseButtonEvent(IGuiNode* node, glm::vec2 pos, int button, int action, int modifiers) {
+bool recurMouseButtonEvent(IGuiNode* node, glm::vec2 pos, Luvoasi::MouseButton button, Luvoasi::KeyState action, int modifiers) {
     if (node->GetAbsoluteArea().IsIn(pos)) {
-        if (node->OnMouseButton(pos, button, action, modifiers)) {
+        if (node->OnMouseButton(pos, (int) button, (int) action, modifiers)) {
             return true;
         }
     }
@@ -111,9 +110,9 @@ bool recurMouseButtonEvent(IGuiNode* node, glm::vec2 pos, int button, int action
     return false;
 }
 
-bool recurMouseDragEvent(IGuiNode* node, glm::vec2 pos, glm::vec2 rel, int button, int modifiers) {
+bool recurMouseDragEvent(IGuiNode* node, glm::vec2 pos, glm::vec2 rel, Luvoasi::MouseButton button, int modifiers) {
     if (node->GetAbsoluteArea().IsIn(pos)) {
-        if (node->OnMouseDrag(pos, rel, button, modifiers)) {
+        if (node->OnMouseDrag(pos, rel, (int) button, modifiers)) {
             return true;
         }
     }
@@ -131,9 +130,9 @@ bool key_callback(Luvoasi::KeyEvent& event) {
     // DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
     // DEBUG_STDOUT("camera : %f %f\n", camera_x, camera_y);
 
-    if (event.GetKey() == GLFW_KEY_KP_SUBTRACT) {
+    if (event.GetKey() == Luvoasi::Key::KP_SUBTRACT) {
         camera_scale /= 1.1;
-    } else if (event.GetKey() == GLFW_KEY_KP_ADD) {
+    } else if (event.GetKey() == Luvoasi::Key::KP_ADD) {
         camera_scale *= 1.1;
     }
 
@@ -160,14 +159,14 @@ bool mousebutton_callback(Luvoasi::MouseButtonEvent& event) {
 
     // DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
 
-    recurMouseButtonEvent(root_gui.get(), cur_pos, event.GetButton(), event.GetAction(), event.GetAction());
+    recurMouseButtonEvent(root_gui.get(), cur_pos, event.GetButton(), event.GetAction(), event.GetModifiers());
 
-    if (event.GetAction() == GLFW_PRESS) {
+    if (event.GetAction() == Luvoasi::KeyState::PRESS) {
         prev_cursor_pos = cur_pos;
         prev_cursor_button = event.GetButton();
     }
 
-    if (event.GetButton() == GLFW_MOUSE_BUTTON_1 && event.GetAction() == GLFW_RELEASE) {
+    if (event.GetButton() == Luvoasi::MouseButton::BUTTON1 && event.GetAction() == Luvoasi::KeyState::RELEASE) {
         glm::vec3 homogeneous_coord(
             xpos * 2.0f / width - 1.0f,
             -(ypos * 2.0f / height - 1.0f),
@@ -183,7 +182,7 @@ bool mousebutton_callback(Luvoasi::MouseButtonEvent& event) {
 }
 
 bool cursorpos_callback(Luvoasi::CursorPosEvent& event) {
-    if (event.GetWindow()->GetMouseButton(prev_cursor_button) == GLFW_PRESS) {
+    if (event.GetWindow()->GetMouseButton(prev_cursor_button) == Luvoasi::KeyState::PRESS) {
         glm::vec2 cur_pos(event.GetX(), event.GetY());
         glm::vec2 delta = cur_pos - prev_cursor_pos;
 
@@ -212,7 +211,7 @@ void beforeLoop() {
 }
 
 void mainLoop() {
-    double current_time = glfwGetTime();
+    double current_time = luvoasi_window->GetTime();
     frame_count++;
 
     if (current_time - previous_time >= 1.0) {
@@ -237,10 +236,10 @@ void mainLoop() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     float speed = 0.05f;
-    if (luvoasi_window->GetKey(GLFW_KEY_A) == GLFW_PRESS) camera_x += -speed;
-    if (luvoasi_window->GetKey(GLFW_KEY_D) == GLFW_PRESS) camera_x +=  speed;
-    if (luvoasi_window->GetKey(GLFW_KEY_W) == GLFW_PRESS) camera_y +=  speed;
-    if (luvoasi_window->GetKey(GLFW_KEY_S) == GLFW_PRESS) camera_y += -speed;
+    if (luvoasi_window->GetKey(Luvoasi::Key::A) == Luvoasi::KeyState::PRESS) camera_x += -speed;
+    if (luvoasi_window->GetKey(Luvoasi::Key::D) == Luvoasi::KeyState::PRESS) camera_x +=  speed;
+    if (luvoasi_window->GetKey(Luvoasi::Key::W) == Luvoasi::KeyState::PRESS) camera_y +=  speed;
+    if (luvoasi_window->GetKey(Luvoasi::Key::S) == Luvoasi::KeyState::PRESS) camera_y += -speed;
 
     // Render world
     glEnable(GL_BLEND);
@@ -248,7 +247,7 @@ void mainLoop() {
     // glEnable(GL_DEPTH_TEST);
     // glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
-    double begin_time_world = glfwGetTime();
+    double begin_time_world = luvoasi_window->GetTime();
 
     world_camera.SetScale(camera_scale);
     world_camera.SetPosition(glm::vec3(camera_x, camera_y, 0.0f));
@@ -278,11 +277,11 @@ void mainLoop() {
     character_model->Draw();
     
     // End render world
-    double end_time_world = glfwGetTime();
+    double end_time_world = luvoasi_window->GetTime();
     elapsed_time_sum_world += end_time_world - begin_time_world;
 
     // Render gui
-    double begin_time_gui = glfwGetTime();
+    double begin_time_gui = luvoasi_window->GetTime();
 
     shader->SetUniform("view", gui_camera.GetMatrix());
 
@@ -295,11 +294,11 @@ void mainLoop() {
     // glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
     // End render gui
-    double end_time_gui = glfwGetTime();
+    double end_time_gui = luvoasi_window->GetTime();
     elapsed_time_sum_gui += end_time_gui - begin_time_gui;
 
     //
-    double end_time = glfwGetTime();
+    double end_time = luvoasi_window->GetTime();
     double elapsed_time = end_time - current_time;
     elapsed_time_sum += elapsed_time;
 

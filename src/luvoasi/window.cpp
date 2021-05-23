@@ -2,7 +2,7 @@
 
 namespace Luvoasi {
 
-KeyEvent::KeyEvent(Window* window, int key, int scancode, int action, int modifiers)
+KeyEvent::KeyEvent(Window* window, Key key, int scancode, KeyState action, int modifiers)
     : m_window(window), m_key(key), m_scancode(scancode), m_action(action), m_modifiers(modifiers) {}
 
 std::wstring KeyEvent::GetName() const {
@@ -13,15 +13,15 @@ Window* KeyEvent::GetWindow() const {
     return m_window;
 }
 
-int KeyEvent::GetKey() const {
-    return m_key;
+Key KeyEvent::GetKey() const {
+    return (Luvoasi::Key) m_key;
 }
 
 int KeyEvent::GetScancode() const {
     return m_scancode;
 }
 
-int KeyEvent::GetAction() const {
+KeyState KeyEvent::GetAction() const {
     return m_action;
 }
 
@@ -48,7 +48,7 @@ double ScrollEvent::GetYOffset() const {
     return m_y_offset;
 }
 
-MouseButtonEvent::MouseButtonEvent(Window* window, int button, int action, int modifiers)
+MouseButtonEvent::MouseButtonEvent(Window* window, MouseButton button, KeyState action, int modifiers)
     : m_window(window), m_button(button), m_action(action), m_mods(modifiers) {}
 
 std::wstring MouseButtonEvent::GetName() const {
@@ -59,11 +59,11 @@ Window* MouseButtonEvent::GetWindow() const {
     return m_window;
 }
 
-int MouseButtonEvent::GetButton() const {
+MouseButton MouseButtonEvent::GetButton() const {
     return m_button;
 }
 
-int MouseButtonEvent::GetAction() const {
+KeyState MouseButtonEvent::GetAction() const {
     return m_action;
 }
 
