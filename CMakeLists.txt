@@ -25,6 +25,7 @@ file(GLOB SOURCES
     src/graphics/*.cpp
     
     src/luvoasi/*.cpp
+    src/luvoasi/core/*.cpp
     src/luvoasi/graphics/*.cpp
 )
 

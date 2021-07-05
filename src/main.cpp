@@ -44,6 +44,10 @@
 #include "camera.h"
 
 #include "luvoasi/window.h"
+#include "luvoasi/graphics/shader.h"
+#include "luvoasi/graphics/texture.h"
+#include "luvoasi/graphics/buffer.h"
+#include "luvoasi/graphics/vertex_array.h"
 
 using json = nlohmann::json;
 
@@ -53,7 +57,6 @@ std::string title = "untitled_game";
 
 std::unique_ptr<AssetManager> asset_manager;
 
-std::unique_ptr<ShaderProgram>     shader;
 std::unique_ptr<Mesh>       mesh;
 std::unique_ptr<Mesh>       quad_mesh;
 std::unique_ptr<_dev::Mesh> test_mesh;
@@ -76,6 +79,9 @@ std::unique_ptr<BlockType> blocktype_grass;
 std::unique_ptr<BlockType> blocktype_wood_top;
 
 std::unique_ptr<Luvoasi::Window> luvoasi_window;
+std::unique_ptr<Luvoasi::ShaderProgram> luvoasi_shader_program;
+std::unique_ptr<Luvoasi::Texture2D> luvoasi_texture_test;
+std::unique_ptr<Luvoasi::VertexArray> luvoasi_va_test;
 
 Camera world_camera;
 Camera gui_camera;
@@ -204,10 +210,10 @@ void renderGui(Canvas& canvas, IGuiNode* node) {
 }
 
 void beforeLoop() {
-    shader->SetUniform("projection", glm::mat4(1));
-    shader->SetUniform("model", glm::mat4(1));
-    shader->SetUniform("tex_transform", glm::mat4(1));
-    shader->SetUniform("view", glm::mat4(1));
+    luvoasi_shader_program->SetUniform("projection", glm::mat4(1));
+    luvoasi_shader_program->SetUniform("model", glm::mat4(1));
+    luvoasi_shader_program->SetUniform("tex_transform", glm::mat4(1));
+    luvoasi_shader_program->SetUniform("view", glm::mat4(1));
 }
 
 void mainLoop() {
@@ -252,19 +258,19 @@ void mainLoop() {
     world_camera.SetScale(camera_scale);
     world_camera.SetPosition(glm::vec3(camera_x, camera_y, 0.0f));
 
-    shader->SetUniform("view", world_camera.GetMatrix());
+    luvoasi_shader_program->SetUniform("view", world_camera.GetMatrix());
 
     tex->Bind();
     mesh->Draw();
 
     SubTexture* sub_texture;
     if ((sub_texture = atlas_test->GetSubTexture("cobble_stone"))) {
-        shader->SetUniform("tex_transform", sub_texture->GetTextureTransformationMatrix());
+        luvoasi_shader_program->SetUniform("tex_transform", sub_texture->GetTextureTransformationMatrix());
         sub_texture->Bind();
 
         quad_mesh->Draw();
     }
-    shader->SetUniform("tex_transform", glm::mat4(1));
+    luvoasi_shader_program->SetUniform("tex_transform", glm::mat4(1));
 
     atlas_test->Bind(); // TODO:
     chunk->GetModel().Draw();
@@ -273,8 +279,12 @@ void mainLoop() {
 
     test_model->Draw();
 
-    character_test_tex->Bind(); // TODO:
+    // character_test_tex->Bind(); // TODO:
+    luvoasi_texture_test->Bind();
     character_model->Draw();
+
+    luvoasi_texture_test->Bind();
+    luvoasi_va_test->Draw();
     
     // End render world
     double end_time_world = luvoasi_window->GetTime();
@@ -283,7 +293,7 @@ void mainLoop() {
     // Render gui
     double begin_time_gui = luvoasi_window->GetTime();
 
-    shader->SetUniform("view", gui_camera.GetMatrix());
+    luvoasi_shader_program->SetUniform("view", gui_camera.GetMatrix());
 
     // Draw GUI
     renderGui(*canvas, root_gui.get());
@@ -371,6 +381,8 @@ int main() {
     atlas_test = asset_manager->GetAsset<TextureAtlas>(L"textures/minecraft_atlas");
     character_test_tex = asset_manager->GetAsset<Texture>(L"textures/character_test");
 
+    luvoasi_texture_test = Luvoasi::Texture2D::CreateTexture2DFromFile("/res/textures/character_test.png");
+
     assert(tex);
     assert(gui_tex);
     assert(atlas_test);
@@ -452,6 +464,66 @@ int main() {
         test_mesh->Bake();
     }
 
+    { // NOTE: luvoasi bake chunk
+        float vertices[] = { 0.0f };
+        unsigned int indices[] = { 0 };
+
+        int tilemap_size = 128;
+        for (int x = -tilemap_size / 2; x < tilemap_size / 2; x++) {
+            for (int y = -tilemap_size / 2; y < tilemap_size / 2; y++) {
+                int index = (int) ((Perlin(glm::vec2(x / 20.0f, y / 20.0f)) + 1.0f) / 2.0f * 25);
+
+                int tex_x = index % 5;
+                int tex_y = index / 5;
+                
+
+            }
+        }
+
+        Luvoasi::BufferLayout layout = {
+            // vec3 position
+            Luvoasi::BufferElement{ 0, 3, false, Luvoasi::DataType::FLOAT32 },
+            // vec2 tex coord
+            Luvoasi::BufferElement{ 1, 2, false, Luvoasi::DataType::FLOAT32 },
+        };
+
+        auto array_buffer = Luvoasi::ArrayBuffer::CreateBuffer(vertices, std::size(vertices));
+        auto index_buffer = Luvoasi::IndexBuffer::CreateBuffer(indices, std::size(indices));
+
+        std::unique_ptr<Luvoasi::VertexArray> _chunk = Luvoasi::VertexArray::CreateVertexArray();
+        _chunk->AttachArrayBuffer(std::move(array_buffer), layout);
+        _chunk->AttachIndexBuffer(std::move(index_buffer));
+    }
+    { // NOTE: luvoasi
+        float x_offset = 2.5f;
+        float y_offset = 0.3f;
+
+        float vertices[] = {
+            x_offset + 0.0f, y_offset + 0.0f, 0.0f, 0.0f, 1.0f,
+            x_offset + 1.0f, y_offset + 0.0f, 0.0f, 1.0f, 1.0f,
+            x_offset + 1.0f, y_offset + 1.0f, 0.0f, 1.0f, 0.0f,
+            x_offset + 0.0f, y_offset + 1.0f, 0.0f, 0.0f, 0.0f,
+        };
+        unsigned int indices[] = {
+            0, 1, 2,
+            0, 2, 3,
+        };
+
+        Luvoasi::BufferLayout layout = {
+            // vec3 position
+            Luvoasi::BufferElement{ 0, 3, false, Luvoasi::DataType::FLOAT32 },
+            // vec2 tex coord
+            Luvoasi::BufferElement{ 1, 2, false, Luvoasi::DataType::FLOAT32 },
+        };
+
+        auto array_buffer = Luvoasi::ArrayBuffer::CreateBuffer(vertices, std::size(vertices));
+        auto index_buffer = Luvoasi::IndexBuffer::CreateBuffer(indices, std::size(indices));
+
+        luvoasi_va_test = Luvoasi::VertexArray::CreateVertexArray();
+        luvoasi_va_test->AttachArrayBuffer(std::move(array_buffer), layout);
+        luvoasi_va_test->AttachIndexBuffer(std::move(index_buffer));
+    }
+
     // Model
     const MeshProfile profile_quad(
         std::vector<Vertex>({
@@ -521,11 +593,12 @@ int main() {
         gui_tex, 10
     )));
 
-    shader = std::make_unique<ShaderProgram>(LoadShader(
+    // shaders
+    luvoasi_shader_program = Luvoasi::ShaderProgram::CreateShaderProgramFromFiles(
         "/res/vert.glsl",
         "/res/frag.glsl"
-    ));
-    shader->Use();
+    );
+    luvoasi_shader_program->Bind();
 
     beforeLoop();
 

@@ -1,30 +1,20 @@
 #include "platforms/luvoasi/graphics/buffer_opengl.h"
 
-#include <GLES3/gl3.h>
-
 namespace Luvoasi {
 
-OpenGLBuffer::OpenGLBuffer() {
-    glGenBuffers(1, &m_id);
+template<>
+OpenGLBuffer<BufferType::ARRAY_BUFFER, float>::OpenGLBuffer(
+    GLenum usage, const void* data, uint32_t size)
+    : OpenGLBuffer(GL_ARRAY_BUFFER, usage, data, size) {
 }
 
-OpenGLBuffer::~OpenGLBuffer() {
-    if (m_id) {
-        glDeleteBuffers(1, &m_id);
-        m_id = 0;
-    }
+template<>
+OpenGLBuffer<BufferType::ELEMENT_ARRAY_BUFFER, unsigned int>::OpenGLBuffer(
+    GLenum usage, const void* data, uint32_t size)
+    : OpenGLBuffer(GL_ELEMENT_ARRAY_BUFFER, usage, data, size) {
 }
 
-uint32_t OpenGLBuffer::GetId() const {
-    return m_id;
-}
-
-void OpenGLBuffer::Bind() const {
-    glBindBuffer(GL_ARRAY_BUFFER, m_id);
-}
-
-void OpenGLBuffer::Unbind() const {
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
+template std::unique_ptr<ArrayBuffer> Buffer<BufferType::ARRAY_BUFFER, float>::CreateBuffer(const float* data, uint32_t size);
+template std::unique_ptr<IndexBuffer> Buffer<BufferType::ELEMENT_ARRAY_BUFFER, unsigned int>::CreateBuffer(const unsigned int* data, uint32_t size);
 
 }

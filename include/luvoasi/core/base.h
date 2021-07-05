@@ -3,10 +3,9 @@
 
 #include <cstdint> // for types such as uint32_t, int32_t etc...
 
-namespace Luvoasi {
-
 #ifdef LUVOASI_DEBUG_ENABLE
     #include <cstdio>
+
     #define LUVOASI_DEBUG_STDOUT(fmt, ...) \
         do { printf(fmt, ##__VA_ARGS__); } while (0)
     #define LUVOASI_DEBUG_STDERR(fmt, ...) \
@@ -23,6 +22,10 @@ namespace Luvoasi {
     #define LUVOASI_ASSERT(...) \
         do {} while (0)
 #endif
+
+namespace Luvoasi {
+
+
 
 }
 

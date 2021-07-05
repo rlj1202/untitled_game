@@ -13,6 +13,9 @@ public:
 
     void SwapBuffers() override;
     void PollEvents() override;
+
+    void Clear() override;
+    void ClearColor(float r, float g, float b, float a) override;
 };
 
 }

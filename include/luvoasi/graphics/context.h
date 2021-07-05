@@ -14,7 +14,8 @@ public:
     virtual void SwapBuffers() = 0;
     virtual void PollEvents() = 0;
 
-    virtual void CreateTexture() const = 0;
+    virtual void Clear() = 0;
+    virtual void ClearColor(float r, float g, float b, float a) = 0;
 };
 
 }

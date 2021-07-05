@@ -15,6 +15,7 @@ uniform mat4 projection;
 uniform mat4 tex_transform;
 
 void main() {
+    // gl_InstanceID
     gl_Position = projection * view * model * vec4(a_pos, 1.0);
     tex_coord = (tex_transform * vec4(a_tex_coord, 0, 1)).xy;
     color = a_color;
