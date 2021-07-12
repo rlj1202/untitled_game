@@ -13,7 +13,10 @@ OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height, uint32_t chann
 
     // in webgl2, combinations of internal format and format are very limited.
     // https://www.khronos.org/registry/webgl/specs/latest/2.0/#3.7.6
-    if (channels == 3) {
+    if (channels == 2) {
+        m_internal_format = GL_LUMINANCE_ALPHA;
+        m_format = GL_LUMINANCE_ALPHA;
+    } else if (channels == 3) {
         m_internal_format = GL_RGB8;
         m_format = GL_RGB;
     } else if (channels == 4) {
@@ -22,7 +25,8 @@ OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height, uint32_t chann
     }
 
     glBindTexture(GL_TEXTURE_2D, m_id);
-    glTexStorage2D(GL_TEXTURE_2D, 1, m_internal_format, width, height);
+    // glTexStorage2D(GL_TEXTURE_2D, 1, m_internal_format, width, height);
+    glTexImage2D(GL_TEXTURE_2D, 0, m_internal_format, width, height, 0, m_format, GL_UNSIGNED_BYTE, nullptr);
 
     GLenum gl_error = glGetError();
     if (gl_error != GL_NO_ERROR) {

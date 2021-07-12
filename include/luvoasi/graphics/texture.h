@@ -73,13 +73,37 @@ public:
      * @param height
      * @param bytes
      */
-    static std::unique_ptr<Texture2D> CreateTexture2D(uint32_t width, uint32_t height, uint32_t channels, const unsigned char* bytes);
+    static std::unique_ptr<Texture2D> CreateTexture2D(
+        uint32_t width, uint32_t height, uint32_t channels,
+        const unsigned char* bytes);
 
     static std::unique_ptr<Texture2D> CreateTexture2DFromFile(const char* path);
 };
 
 /**
- * @brief
+ * @brief 
+ * 
+ */
+class Texture3D : public Texture {
+public:
+    virtual uint32_t GetWidth() const = 0;
+    virtual uint32_t GetHeight() const = 0;
+    virtual uint32_t GetDepth() const = 0;
+
+    virtual void SetData(const void* data, uint32_t size) = 0;
+
+    virtual void SetData(
+        uint32_t x_offset, uint32_t y_offset, uint32_t z_offset,
+        uint32_t width, uint32_t height, uint32_t depth,
+        const void* data, uint32_t size) = 0;
+
+    static std::unique_ptr<Texture2D> CreateTexture3D(
+        uint32_t width, uint32_t height, uint32_t depth, uint32_t channels,
+        const unsigned char* bytes);
+};
+
+/**
+ * @brief Sub 2d image of another 2d image.
  * @details
  * 
  */

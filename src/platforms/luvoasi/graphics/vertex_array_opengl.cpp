@@ -89,12 +89,12 @@ void OpenGLVertexArray::Draw() const {
     Bind();
     if (m_index_buffer) {
         int cnt_instances = 1;
-        // glDrawElements(
-        //     GL_TRIANGLES, m_index_buffer->GetLength(), GL_UNSIGNED_INT,
-        //     nullptr);
-        glDrawElementsInstanced(
+        glDrawElements(
             GL_TRIANGLES, m_index_buffer->GetLength(), GL_UNSIGNED_INT,
-            nullptr, cnt_instances);
+            nullptr);
+        // glDrawElementsInstanced(
+        //     GL_TRIANGLES, m_index_buffer->GetLength(), GL_UNSIGNED_INT,
+        //     nullptr, cnt_instances);
     } else {
         // TODO: 
         int cnt_vertices = 1;

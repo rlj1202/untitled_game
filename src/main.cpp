@@ -48,6 +48,8 @@
 #include "luvoasi/graphics/texture.h"
 #include "luvoasi/graphics/buffer.h"
 #include "luvoasi/graphics/vertex_array.h"
+#include "luvoasi/gui/font.h"
+#include "luvoasi/rendering/renderer.h"
 
 using json = nlohmann::json;
 
@@ -82,6 +84,7 @@ std::unique_ptr<Luvoasi::Window> luvoasi_window;
 std::unique_ptr<Luvoasi::ShaderProgram> luvoasi_shader_program;
 std::unique_ptr<Luvoasi::Texture2D> luvoasi_texture_test;
 std::unique_ptr<Luvoasi::VertexArray> luvoasi_va_test;
+std::unique_ptr<Luvoasi::FontRenderer> luvoasi_font_renderer;
 
 Camera world_camera;
 Camera gui_camera;
@@ -283,7 +286,7 @@ void mainLoop() {
     luvoasi_texture_test->Bind();
     character_model->Draw();
 
-    luvoasi_texture_test->Bind();
+    luvoasi_font_renderer->GetBitmapFont()->GetTexture(0)->Bind();
     luvoasi_va_test->Draw();
     
     // End render world
@@ -294,6 +297,9 @@ void mainLoop() {
     double begin_time_gui = luvoasi_window->GetTime();
 
     luvoasi_shader_program->SetUniform("view", gui_camera.GetMatrix());
+    
+    luvoasi_font_renderer->DrawString(L"Hello, world! 안녕하세요", 10, 100, 2.0f, 0);
+    luvoasi_font_renderer->Render();
 
     // Draw GUI
     renderGui(*canvas, root_gui.get());
@@ -497,12 +503,13 @@ int main() {
     { // NOTE: luvoasi
         float x_offset = 2.5f;
         float y_offset = 0.3f;
+        float size = 20.0f;
 
         float vertices[] = {
-            x_offset + 0.0f, y_offset + 0.0f, 0.0f, 0.0f, 1.0f,
-            x_offset + 1.0f, y_offset + 0.0f, 0.0f, 1.0f, 1.0f,
-            x_offset + 1.0f, y_offset + 1.0f, 0.0f, 1.0f, 0.0f,
-            x_offset + 0.0f, y_offset + 1.0f, 0.0f, 0.0f, 0.0f,
+            x_offset + 0.0f * size, y_offset + 0.0f * size, 0.0f, 0.0f, 1.0f,
+            x_offset + 1.0f * size, y_offset + 0.0f * size, 0.0f, 1.0f, 1.0f,
+            x_offset + 1.0f * size, y_offset + 1.0f * size, 0.0f, 1.0f, 0.0f,
+            x_offset + 0.0f * size, y_offset + 1.0f * size, 0.0f, 0.0f, 0.0f,
         };
         unsigned int indices[] = {
             0, 1, 2,
@@ -575,6 +582,9 @@ int main() {
     chunk->Bake();
 
     // Gui elements
+    // NOTE: luvoasi
+    luvoasi_font_renderer = std::make_unique<Luvoasi::FontRenderer>();
+
     canvas = std::make_unique<Canvas>();
     root_gui = std::make_unique<GuiWindow>(GuiWindow(
         GuiArea{

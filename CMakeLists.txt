@@ -27,6 +27,9 @@ file(GLOB SOURCES
     src/luvoasi/*.cpp
     src/luvoasi/core/*.cpp
     src/luvoasi/graphics/*.cpp
+    src/luvoasi/gui/*.cpp
+    src/luvoasi/utils/*.cpp
+    src/luvoasi/rendering/*.cpp
 )
 
 if (EMSCRIPTEN)
