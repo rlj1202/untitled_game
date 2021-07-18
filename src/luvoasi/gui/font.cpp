@@ -148,12 +148,14 @@ BitmapFont::BitmapFont(const FontFace* fontface, uint32_t width, uint32_t height
 
     m_texture = std::move(Texture2D::CreateTexture2D(width, height, 2, nullptr));
 
+    /*
     for (unsigned int codepoint = 0; codepoint < 128; codepoint++) {
         LoadGlyph(codepoint);
     }
     for (unsigned int codepoint = U'가'; codepoint <= U'힣'; codepoint++) {
         LoadGlyph(codepoint);
     }
+    */
 }
 
 uint32_t BitmapFont::GetWidth() const {
@@ -169,7 +171,11 @@ Texture* BitmapFont::GetTexture(uint32_t codepoint) {
 }
 
 const Glyph* BitmapFont::GetGlyphInfo(uint32_t codepoint) {
-    return &m_glyph_infos[codepoint];
+    auto it = m_glyph_infos.find(codepoint);
+    if (it == m_glyph_infos.end()) {
+        return nullptr;
+    }
+    return &it->second;
 }
 
 bool BitmapFont::LoadGlyph(uint32_t codepoint) {
@@ -198,7 +204,7 @@ bool BitmapFont::LoadGlyph(uint32_t codepoint) {
     m_glyph_infos[codepoint] = glyph_info;
 
     if (!m_fontface->RenderGlyph()) {
-        LUVOASI_DEBUG_STDOUT("Failed to render glyph u+%04x.\n", codepoint);
+        LUVOASI_DEBUG_STDOUT("FontRenderer : Failed to render glyph u+%04x.\n", codepoint);
         return false;
     }
     FT_Bitmap &bitmap = glyph->bitmap;

@@ -30,6 +30,7 @@ file(GLOB SOURCES
     src/luvoasi/gui/*.cpp
     src/luvoasi/utils/*.cpp
     src/luvoasi/rendering/*.cpp
+    src/luvoasi/map/*.cpp
 )
 
 if (EMSCRIPTEN)
@@ -86,7 +87,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE pugixml
     PRIVATE freetype
     PRIVATE EnTT
-    # PRIVATE nanogui
+    PRIVATE imgui
 )
 
 if (NOT EMSCRIPTEN)

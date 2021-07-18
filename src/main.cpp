@@ -28,9 +28,12 @@
 // skypjack/entt
 #include <entt/entt.hpp>
 
-#define DEBUG
-#include "debug.h"
+// ocornut/imgui
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
+// ???
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 #include "graphics/mesh.h"
@@ -43,7 +46,11 @@
 #include "asset.h"
 #include "camera.h"
 
+// luvoasi
+#define LUVOASI_DEBUG_ENABLE
+#include "luvoasi/core/base.h"
 #include "luvoasi/window.h"
+#include "platforms/luvoasi/window_glfw.h"
 #include "luvoasi/graphics/shader.h"
 #include "luvoasi/graphics/texture.h"
 #include "luvoasi/graphics/buffer.h"
@@ -59,10 +66,8 @@ std::string title = "untitled_game";
 
 std::unique_ptr<AssetManager> asset_manager;
 
-std::unique_ptr<Mesh>       mesh;
-std::unique_ptr<Mesh>       quad_mesh;
-std::unique_ptr<_dev::Mesh> test_mesh;
-// std::unique_ptr<_Mesh<Vbo<float, 3>, Vbo<float, 2>, Vbo<float, 3, 3>>> test_mesh;
+std::unique_ptr<Mesh> mesh;
+std::unique_ptr<Mesh> quad_mesh;
 
 std::unique_ptr<Model> test_model;
 std::unique_ptr<Model> character_model;
@@ -84,6 +89,7 @@ std::unique_ptr<Luvoasi::Window> luvoasi_window;
 std::unique_ptr<Luvoasi::ShaderProgram> luvoasi_shader_program;
 std::unique_ptr<Luvoasi::Texture2D> luvoasi_texture_test;
 std::unique_ptr<Luvoasi::VertexArray> luvoasi_va_test;
+std::unique_ptr<Luvoasi::VertexArray> luvoasi_va_chunk;
 std::unique_ptr<Luvoasi::FontRenderer> luvoasi_font_renderer;
 
 Camera world_camera;
@@ -99,6 +105,13 @@ int frame_count;
 double elapsed_time_sum;
 double elapsed_time_sum_world;
 double elapsed_time_sum_gui;
+
+int fps;
+float mem_total;
+float mem_usage;
+float avg_elapsed_time;
+float avg_world_time;
+float avg_gui_time;
 
 glm::vec2 prev_cursor_pos;
 Luvoasi::MouseButton prev_cursor_button;
@@ -136,8 +149,8 @@ bool recurMouseDragEvent(IGuiNode* node, glm::vec2 pos, glm::vec2 rel, Luvoasi::
 }
 
 bool key_callback(Luvoasi::KeyEvent& event) {
-    // DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
-    // DEBUG_STDOUT("camera : %f %f\n", camera_x, camera_y);
+    // LUVOASI_DEBUG_STDOUT("key callback : %d %d\n", key, scancode);
+    // LUVOASI_DEBUG_STDOUT("camera : %f %f\n", camera_x, camera_y);
 
     if (event.GetKey() == Luvoasi::Key::KP_SUBTRACT) {
         camera_scale /= 1.1;
@@ -149,7 +162,7 @@ bool key_callback(Luvoasi::KeyEvent& event) {
 }
 
 bool scroll_callback(Luvoasi::ScrollEvent& event) {
-    // DEBUG_STDOUT("scroll callback : %f %f\n", x, y);
+    // LUVOASI_DEBUG_STDOUT("scroll callback : %f %f\n", x, y);
 
     if (event.GetYOffset() > 0) {
         camera_scale /= 1.1;
@@ -166,7 +179,7 @@ bool mousebutton_callback(Luvoasi::MouseButtonEvent& event) {
     event.GetWindow()->GetCursorPos(&xpos, &ypos);
     glm::vec2 cur_pos(xpos, ypos);
 
-    // DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
+    // LUVOASI_DEBUG_STDOUT("mouse : %d %d %d, %f %f\n", button, action, mods, xpos, ypos);
 
     recurMouseButtonEvent(root_gui.get(), cur_pos, event.GetButton(), event.GetAction(), event.GetModifiers());
 
@@ -182,9 +195,9 @@ bool mousebutton_callback(Luvoasi::MouseButtonEvent& event) {
             1.0f);
         glm::vec3 world_coord = world_camera.GetWorldCoords(homogeneous_coord);
 
-        DEBUG_STDOUT("mouse rel : %f %f\n", xpos, ypos);
-        DEBUG_STDOUT("homogenous coord : %f %f\n", homogeneous_coord.x, homogeneous_coord.y);
-        DEBUG_STDOUT("world coord : %f %f\n", world_coord.x, world_coord.y);
+        LUVOASI_DEBUG_STDOUT("mouse rel : %f %f\n", xpos, ypos);
+        LUVOASI_DEBUG_STDOUT("homogenous coord : %f %f\n", homogeneous_coord.x, homogeneous_coord.y);
+        LUVOASI_DEBUG_STDOUT("world coord : %f %f\n", world_coord.x, world_coord.y);
     }
 
     return true;
@@ -224,16 +237,12 @@ void mainLoop() {
     frame_count++;
 
     if (current_time - previous_time >= 1.0) {
-        float mem_total = GetMemoryTotal() / 1024.0f / 1024.0f;
-        float mem_usage = GetMemoryUsage() / 1024.0f / 1024.0f;
-
-        DEBUG_STDOUT("FPS : %d, avg elapsed time : %.2f ms, mem : %.1f/%.1f MB, world = %.2f ms, gui = %.2f ms\n",
-            frame_count,
-            elapsed_time_sum / frame_count * 1000.0,
-            mem_usage, mem_total,
-            elapsed_time_sum_world / frame_count * 1000.0,
-            elapsed_time_sum_gui / frame_count * 1000.0
-        );
+        fps = frame_count;
+        mem_total = GetMemoryTotal() / 1024.0f / 1024.0f;
+        mem_usage = GetMemoryUsage() / 1024.0f / 1024.0f;
+        avg_elapsed_time = elapsed_time_sum / frame_count * 1000.0;
+        avg_world_time = elapsed_time_sum_world / frame_count * 1000.0;
+        avg_gui_time = elapsed_time_sum_gui / frame_count * 1000.0;
 
         frame_count = 0;
         previous_time = current_time;
@@ -244,6 +253,11 @@ void mainLoop() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // imgui
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    
     float speed = 0.05f;
     if (luvoasi_window->GetKey(Luvoasi::Key::A) == Luvoasi::KeyState::PRESS) camera_x += -speed;
     if (luvoasi_window->GetKey(Luvoasi::Key::D) == Luvoasi::KeyState::PRESS) camera_x +=  speed;
@@ -263,28 +277,31 @@ void mainLoop() {
 
     luvoasi_shader_program->SetUniform("view", world_camera.GetMatrix());
 
-    tex->Bind();
-    mesh->Draw();
+    // tex->Bind();
+    // mesh->Draw();
 
-    SubTexture* sub_texture;
-    if ((sub_texture = atlas_test->GetSubTexture("cobble_stone"))) {
-        luvoasi_shader_program->SetUniform("tex_transform", sub_texture->GetTextureTransformationMatrix());
-        sub_texture->Bind();
+    // SubTexture* sub_texture;
+    // if ((sub_texture = atlas_test->GetSubTexture("cobble_stone"))) {
+    //     luvoasi_shader_program->SetUniform("tex_transform", sub_texture->GetTextureTransformationMatrix());
+    //     sub_texture->Bind();
 
-        quad_mesh->Draw();
-    }
-    luvoasi_shader_program->SetUniform("tex_transform", glm::mat4(1));
+    //     quad_mesh->Draw();
+    // }
+    // luvoasi_shader_program->SetUniform("tex_transform", glm::mat4(1));
 
-    atlas_test->Bind(); // TODO:
-    chunk->GetModel().Draw();
+    // atlas_test->Bind(); // TODO:
+    // chunk->GetModel().Draw();
 
-    test_mesh->Draw();
+    // test_mesh->Draw();
 
-    test_model->Draw();
+    // test_model->Draw();
+
+    atlas_test->Bind();
+    luvoasi_va_chunk->Draw();
 
     // character_test_tex->Bind(); // TODO:
-    luvoasi_texture_test->Bind();
-    character_model->Draw();
+    // luvoasi_texture_test->Bind();
+    // character_model->Draw();
 
     luvoasi_font_renderer->GetBitmapFont()->GetTexture(0)->Bind();
     luvoasi_va_test->Draw();
@@ -298,7 +315,19 @@ void mainLoop() {
 
     luvoasi_shader_program->SetUniform("view", gui_camera.GetMatrix());
     
-    luvoasi_font_renderer->DrawString(L"Hello, world! 안녕하세요", 10, 100, 2.0f, 0);
+    wchar_t buffer[1024];
+    int len = std::swprintf(
+        buffer, sizeof(buffer),
+        L"FPS: %d, avg elapsed time : %.2f ms, mem : %.1f/%.1f MB, world = %.2f ms, gui = %.2f ms",
+        fps, avg_elapsed_time, mem_usage, mem_total, avg_world_time, avg_gui_time);
+    std::wstring debug_text(buffer, 0, len);
+    luvoasi_font_renderer->DrawString(debug_text, 10, 10 + 16);
+    luvoasi_font_renderer->DrawString(L"안녕! 루보아시!", 10, 10 + 16*2 + 2*1);
+    luvoasi_font_renderer->DrawString(L"STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST ", 10, 10 + 16*3 + 2*2);
+    luvoasi_font_renderer->DrawString(L"STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST ", 10, 10 + 16*4 + 2*3);
+    luvoasi_font_renderer->DrawString(L"STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST STRESS TEST ", 10, 10 + 16*5 + 2*4);
+    luvoasi_font_renderer->DrawString(L"沈智洙 ひらがな", 10, 10 + 16*6 + 2*5);
+    luvoasi_font_renderer->DrawString(L"이 폰트 렌더링 시스템은 글자를 필요시 동적으로 텍스처에 로드합니다.", 10, 10 + 16*7 + 2*6);
     luvoasi_font_renderer->Render();
 
     // Draw GUI
@@ -313,7 +342,20 @@ void mainLoop() {
     double end_time_gui = luvoasi_window->GetTime();
     elapsed_time_sum_gui += end_time_gui - begin_time_gui;
 
-    //
+    // imgui
+    {
+        ImGui::Begin("Hello, world!");
+
+        ImGui::Text("This is somme useful text.");
+        ImGui::Text(u8"한쿡말도 됨?");
+        ImGui::SameLine();
+
+        ImGui::End();
+    }
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // End frame
     double end_time = luvoasi_window->GetTime();
     double elapsed_time = end_time - current_time;
     elapsed_time_sum += elapsed_time;
@@ -334,7 +376,7 @@ int main() {
 
     auto view = registry.view<int>();
     view.each([](int& test) {
-        DEBUG_STDOUT("Entt : %d\n", test);
+        LUVOASI_DEBUG_STDOUT("Entt : %d\n", test);
     });
 
     // using json test
@@ -348,13 +390,13 @@ int main() {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file("/res/block_types.xml");
     if (!result) {
-        DEBUG_STDOUT("Failed to load xml file\n");
+        LUVOASI_DEBUG_STDOUT("Failed to load xml file\n");
         return -1;
     }
     for (auto block_type : doc.child("BlockTypes").children("BlockType")) {
         auto name = block_type.child("Name").child_value();
         auto tex_path = block_type.child("Texture").child("Path").child_value();
-        DEBUG_STDOUT("block type name : %s\n", name);
+        LUVOASI_DEBUG_STDOUT("block type name : %s\n", name);
     }
 
     // start of program
@@ -366,6 +408,17 @@ int main() {
     luvoasi_window->AddScrollEventHandler(scroll_callback);
     luvoasi_window->AddMouseButtonEventHandler(mousebutton_callback);
     luvoasi_window->AddCursorPosEventHandler(cursorpos_callback);
+
+    // imgui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& imgui_io = ImGui::GetIO();
+
+    ImGui::StyleColorsDark();
+
+    Luvoasi::GLFWWindow* luvoasi_glfw_window = dynamic_cast<Luvoasi::GLFWWindow*>(luvoasi_window.get());
+    ImGui_ImplGlfw_InitForOpenGL(luvoasi_glfw_window->GetRawPointer(), true);
+    ImGui_ImplOpenGL3_Init("#version 300 es");
 
     //
     world_camera = Camera(glm::ortho(
@@ -396,7 +449,7 @@ int main() {
 
     std::vector<std::wstring> texture_asset_list = asset_manager->GetAssetList<Texture>()->GetLoadedAssetList();
     for (auto asset_path : texture_asset_list) {
-        DEBUG_STDOUT("Texture Asset : %S\n", asset_path.c_str());
+        LUVOASI_DEBUG_STDOUT("Texture Asset : %S\n", asset_path.c_str());
     }
     
     // Meshes
@@ -429,7 +482,7 @@ int main() {
             );
         }
     }
-    mesh = std::make_unique<Mesh>(BuildMesh(meshprofile_tilemap));
+    // mesh = std::make_unique<Mesh>(BuildMesh(meshprofile_tilemap));
     quad_mesh = std::make_unique<Mesh>(BuildMesh(
         meshprofile_quad
             .Clone()
@@ -437,52 +490,38 @@ int main() {
             .Scale(glm::vec3(4.5f, 4.5f, 2.0f))
     ));
 
-    {
-        std::vector<Vertex> vertices = {
-            Vertex(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f)),
-            Vertex(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-            Vertex(glm::vec3(1.0f, 1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-            Vertex(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-        };
-        std::vector<unsigned int> indices = {
-            0, 1, 2,
-            0, 2, 3,
-        };
-
-        std::unique_ptr<Buffer<Vertex>> buffer = std::make_unique<Buffer<Vertex>>(
-            GL_ARRAY_BUFFER, GL_STATIC_DRAW
-        );
-        buffer->SetData(vertices);
-
-        std::unique_ptr<Buffer<unsigned int>> indices_buffer = std::make_unique<Buffer<unsigned int>>(
-            GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW
-        );
-        indices_buffer->SetData(indices);
-
-        _dev::BufferLayout buffer_layout = {
-            _dev::BufferElement(0, 3, GL_FLOAT, sizeof(float)),
-            _dev::BufferElement(1, 2, GL_FLOAT, sizeof(float)),
-        };
-
-        test_mesh = std::make_unique<_dev::Mesh>(std::vector<ITexture*>({atlas_test}));
-        test_mesh->AttachBuffer(std::move(buffer), buffer_layout);
-        test_mesh->AttachElementArrayBuffer(std::move(indices_buffer));
-        test_mesh->Bake();
-    }
-
     { // NOTE: luvoasi bake chunk
-        float vertices[] = { 0.0f };
-        unsigned int indices[] = { 0 };
+        std::vector<float> vertices;
+        std::vector<unsigned int> indices;
 
+        unsigned int last_vertex = 0;
         int tilemap_size = 128;
         for (int x = -tilemap_size / 2; x < tilemap_size / 2; x++) {
             for (int y = -tilemap_size / 2; y < tilemap_size / 2; y++) {
                 int index = (int) ((Perlin(glm::vec2(x / 20.0f, y / 20.0f)) + 1.0f) / 2.0f * 25);
 
-                int tex_x = index % 5;
-                int tex_y = index / 5;
+                int tex_x = index % 5 + 5;
+                int tex_y = index / 5 + 5;
                 
+                vertices.insert(vertices.end(), {
+                    x + 0.0f, y + 0.0f, 0.0f,
+                    (tex_x + 0.0f) / 16.0f, (tex_y + 1.0f) / 16.0f,
 
+                    x + 1.0f, y + 0.0f, 0.0f,
+                    (tex_x + 1.0f) / 16.0f, (tex_y + 1.0f) / 16.0f,
+
+                    x + 1.0f, y + 1.0f, 0.0f,
+                    (tex_x + 1.0f) / 16.0f, (tex_y + 0.0f) / 16.0f,
+
+                    x + 0.0f, y + 1.0f, 0.0f,
+                    (tex_x + 0.0f) / 16.0f, (tex_y + 0.0f) / 16.0f
+                });
+                indices.insert(indices.end(), {
+                    last_vertex + 0, last_vertex + 1, last_vertex + 2,
+                    last_vertex + 0, last_vertex + 2, last_vertex + 3
+                });
+
+                last_vertex += 4;
             }
         }
 
@@ -493,12 +532,13 @@ int main() {
             Luvoasi::BufferElement{ 1, 2, false, Luvoasi::DataType::FLOAT32 },
         };
 
-        auto array_buffer = Luvoasi::ArrayBuffer::CreateBuffer(vertices, std::size(vertices));
-        auto index_buffer = Luvoasi::IndexBuffer::CreateBuffer(indices, std::size(indices));
-
-        std::unique_ptr<Luvoasi::VertexArray> _chunk = Luvoasi::VertexArray::CreateVertexArray();
-        _chunk->AttachArrayBuffer(std::move(array_buffer), layout);
-        _chunk->AttachIndexBuffer(std::move(index_buffer));
+        auto array_buffer = Luvoasi::ArrayBuffer::CreateBuffer(vertices.data(), vertices.size());
+        auto index_buffer = Luvoasi::IndexBuffer::CreateBuffer(indices.data(), indices.size());
+        
+        luvoasi_va_chunk = Luvoasi::VertexArray::CreateVertexArray();
+        luvoasi_va_chunk->AttachArrayBuffer(std::move(array_buffer), layout);
+        luvoasi_va_chunk->AttachIndexBuffer(std::move(index_buffer));
+        luvoasi_va_chunk->Unbind();
     }
     { // NOTE: luvoasi
         float x_offset = 2.5f;
@@ -529,6 +569,7 @@ int main() {
         luvoasi_va_test = Luvoasi::VertexArray::CreateVertexArray();
         luvoasi_va_test->AttachArrayBuffer(std::move(array_buffer), layout);
         luvoasi_va_test->AttachIndexBuffer(std::move(index_buffer));
+        luvoasi_va_test->Unbind();
     }
 
     // Model
@@ -569,17 +610,17 @@ int main() {
     blocktype_wood_top = std::make_unique<BlockType>(
         "wood_top", atlas_test->GetSubTexture("wood_top")
     );
-    chunk = std::make_unique<Chunk>();
-    for (int r = 0; r < CHUNK_SIZE; r++) {
-        for (int c = 0; c < CHUNK_SIZE; c++) {
-            int value = std::rand() % 2;
-            if (value == 0)
-                chunk->SetBlock({c, r}, Block(blocktype_grass.get()));
-            else
-                chunk->SetBlock({c, r}, Block(blocktype_wood_top.get()));
-        }
-    }
-    chunk->Bake();
+    // chunk = std::make_unique<Chunk>();
+    // for (int r = 0; r < CHUNK_SIZE; r++) {
+    //     for (int c = 0; c < CHUNK_SIZE; c++) {
+    //         int value = std::rand() % 2;
+    //         if (value == 0)
+    //             chunk->SetBlock({c, r}, Block(blocktype_grass.get()));
+    //         else
+    //             chunk->SetBlock({c, r}, Block(blocktype_wood_top.get()));
+    //     }
+    // }
+    // chunk->Bake();
 
     // Gui elements
     // NOTE: luvoasi
@@ -619,6 +660,11 @@ int main() {
         mainLoop();
     }
 #endif
+
+    // imgui cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     return 0;
 }

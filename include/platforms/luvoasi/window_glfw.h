@@ -38,6 +38,8 @@ public:
 
     void Bind() const override;
 
+    GLFWwindow* GetRawPointer() const;
+
 private:
     GLFWwindow* m_window;
 

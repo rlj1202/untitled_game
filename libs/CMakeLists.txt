@@ -5,7 +5,13 @@ add_subdirectory(glm)
 add_subdirectory(pugixml)
 add_subdirectory(freetype-2.10.4)
 add_subdirectory(entt)
-# add_subdirectory(nanogui)
+
+file(GLOB IMGUI_SOURCES
+    imgui/*.cpp
+    imgui/backends/*_glfw.cpp
+    imgui/backends/*_opengl3.cpp)
+add_library(imgui STATIC ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC imgui imgui/backends)
 
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE stb)

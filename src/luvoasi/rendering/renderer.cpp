@@ -3,6 +3,12 @@
 namespace Luvoasi {
 
 /*******************************************************************************
+ * Renderer
+ ******************************************************************************/
+
+
+
+/*******************************************************************************
  * FontRenderer
  ******************************************************************************/
 
@@ -10,27 +16,27 @@ FontRenderer::FontRenderer() {
     m_font_face = std::make_unique<FontFace>(std::move(m_font_lib.NewFontFace("/res/D2Coding-Ver1.3.2-20180524-all.ttc")));
     m_font_face->SetPixelSize(0, 16);
     m_bitmap_font = std::make_unique<BitmapFont>(m_font_face.get(), 2048, 2048);
-
-    for (int i = 'a'; i <= 'z'; i++) {
-        auto test = m_bitmap_font->GetGlyphInfo(i);
-        LUVOASI_DEBUG_STDOUT("TEST %d %d %d %d\n", test->offset_x, test->offset_y, test->width, test->height);
-    }
 }
 
 int FontRenderer::DrawString(const std::wstring& string, float x, float y, float scale, float max_width) {
     float cur_length = 0;
     int cur_index = 0;
     uint32_t prev_glyph_index = 0;
-    unsigned int last_vertex = 0;
+    unsigned int last_vertex = m_vertices.size() / 5;
 
     for (; cur_index < string.size(); cur_index++) {
         wchar_t codepoint = string[cur_index];
 
         const Glyph* glyph = m_bitmap_font->GetGlyphInfo(codepoint);
         if (!glyph) {
-            // TODO: just skip or draw something else?
+            if (m_bitmap_font->LoadGlyph(codepoint)) {
+                glyph = m_bitmap_font->GetGlyphInfo(codepoint);
 
-            continue;
+                LUVOASI_DEBUG_STDOUT("FontRenderer : successfully load glyph for %d.\n", codepoint);
+            } else {
+                // TODO: just skip or draw something else?
+                continue;
+            }
         }
 
         // kerning
@@ -109,6 +115,8 @@ void FontRenderer::Render() {
 
     m_vertices.clear();
     m_indices.clear();
+    m_vertices.reserve(512);
+    m_indices.reserve(512);
 }
 
 BitmapFont* FontRenderer::GetBitmapFont() const {

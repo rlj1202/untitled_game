@@ -1,6 +1,7 @@
 #ifndef H_LUVOASI_VERTEX_ARRAY
 #define H_LUVOASI_VERTEX_ARRAY
 
+#define LUVOASI_DEBUG_ENABLE
 #include "luvoasi/core/base.h"
 #include "luvoasi/graphics/buffer.h"
 

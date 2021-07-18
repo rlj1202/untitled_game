@@ -67,12 +67,16 @@ void OpenGLVertexArray::AttachArrayBuffer(std::unique_ptr<ArrayBuffer> buffer, c
         offset += DataType::GetBytes(element.internal_type) * element.size;
     }
 
+    Unbind();
+
     m_buffers.push_back(std::move(buffer));
 }
 
 void OpenGLVertexArray::AttachIndexBuffer(std::unique_ptr<IndexBuffer> buffer) {
     Bind();
     buffer->Bind();
+
+    Unbind();
 
     m_index_buffer = std::move(buffer);
 }
@@ -88,15 +92,14 @@ void OpenGLVertexArray::Unbind() const {
 void OpenGLVertexArray::Draw() const {
     Bind();
     if (m_index_buffer) {
+        // TODO:
         int cnt_instances = 1;
-        glDrawElements(
+        glDrawElementsInstanced(
             GL_TRIANGLES, m_index_buffer->GetLength(), GL_UNSIGNED_INT,
-            nullptr);
-        // glDrawElementsInstanced(
-        //     GL_TRIANGLES, m_index_buffer->GetLength(), GL_UNSIGNED_INT,
-        //     nullptr, cnt_instances);
+            nullptr, cnt_instances);
     } else {
         // TODO: 
+        LUVOASI_DEBUG_STDOUT("ERROR: DrawArrays\n");
         int cnt_vertices = 1;
         glDrawArrays(GL_TRIANGLES, 0, cnt_vertices);
     }

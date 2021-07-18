@@ -7,7 +7,10 @@
     #include <cstdio>
 
     #define LUVOASI_DEBUG_STDOUT(fmt, ...) \
-        do { printf(fmt, ##__VA_ARGS__); } while (0)
+        do { \
+            printf("[%s:%d] ", __FILE__, __LINE__); \
+            printf(fmt, ##__VA_ARGS__); \
+        } while (0)
     #define LUVOASI_DEBUG_STDERR(fmt, ...) \
         do { fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
 #else

@@ -136,6 +136,10 @@ void GLFWWindow::Bind() const {
     glfwMakeContextCurrent(m_window);
 }
 
+GLFWwindow* GLFWWindow::GetRawPointer() const {
+    return m_window;
+}
+
 std::unique_ptr<Window> CreateWindow(uint32_t width, uint32_t height, const char* title) {
     return std::move(
         std::make_unique<GLFWWindow>(width, height, title)
