@@ -12,12 +12,15 @@ add_executable(event_test "event.cpp")
 target_link_libraries(test1
     PRIVATE pugixml
 )
-set_target_properties(test1 test2 event_test
-    PROPERTIES LINK_FLAGS "\
-                          -s NODERAWFS=1 \
-                          -lnodefs.js \
-                          "
+if (EMSCRIPTEN)
+    set_target_properties(test1 test2 event_test
+        PROPERTIES LINK_FLAGS "\
+                            -s NODERAWFS=1 \
+                            -lnodefs.js \
+                            "
 )
+endif()
+
 add_test(
     NAME test1
     COMMAND ${TEST_COMMAND} test1${EXTENSION}

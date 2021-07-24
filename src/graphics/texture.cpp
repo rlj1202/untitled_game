@@ -5,7 +5,12 @@
 #include <queue>
 #include <algorithm>
 
+#ifdef EMSCRIPTEN
 #include <GLES3/gl3.h>
+#else
+#include <glad/glad.h>
+#endif
+
 #include <glm/gtc/matrix_transform.hpp>
 
 #define DEBUG
@@ -30,12 +35,15 @@ Texture::Texture(
     this->data = new unsigned char[bytes];
     if (!this->data) {
         // error : ouf of memory
+        DEBUG_STDOUT("Texture::Texture() : out of memory\n");
     }
     memset(this->data, 0, bytes);
 
     if (data) {
         memcpy(this->data, data, bytes);
     }
+
+    DEBUG_STDOUT("Texture::Texture() : memory copied.\n");
 
     Bake();
     

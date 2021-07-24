@@ -8,7 +8,11 @@
 #include <map>
 #include <glm/glm.hpp>
 
+#ifdef EMSCRIPTEN
 #include <GLES3/gl3.h>
+#else
+#include <glad/glad.h>
+#endif
 
 #include "rect_pack.h"
 

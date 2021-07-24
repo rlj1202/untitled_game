@@ -10,8 +10,14 @@ if (EMSCRIPTEN)
 endif()
 
 if (NOT EMSCRIPTEN)
-    find_package(glfw3 REQUIRED)
+    find_package(glfw3 3.3 REQUIRED)
     find_package(OpenGL REQUIRED)
+
+    if (GLFW_FOUND)
+        message("glfw3 found")
+    else()
+        message("glfw3 not found")
+    endif()
 endif()
 
 enable_testing()
@@ -44,6 +50,10 @@ elseif (linux)
 elseif (CYGWIN)
 elseif (APPLE)
 elseif (WIN32)
+    file(GLOB_RECURSE PLATFORM_SOURCES
+        src/platforms/*_win.cpp
+    )
+elseif (UNIX)
 endif()
 
 file(GLOB_RECURSE GRAPHICS_SOURCES
@@ -78,6 +88,12 @@ if (EMSCRIPTEN)
                               --preload-file ${PROJECT_SOURCE_DIR}/res@/res \
                               "
 )
+elseif(WIN32)
+    set_target_properties(${PROJECT_NAME}
+        PROPERTIES LINK_FLAGS "\
+                            -static-libgcc \
+                            -static-libstdc++ \
+                            ")
 endif()
 
 target_link_libraries(${PROJECT_NAME}
@@ -88,11 +104,12 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE freetype
     PRIVATE EnTT
     PRIVATE imgui
+    PRIVATE glad
 )
 
 if (NOT EMSCRIPTEN)
     target_link_libraries(${PROJECT_NAME}
-        PRIVATE glfw3
+        PRIVATE glfw
         PRIVATE OpenGL::GL
     )
 endif()

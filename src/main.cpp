@@ -10,10 +10,10 @@
 // emscripten
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
-#endif
-
-// gles3
 #include <GLES3/gl3.h>
+#else
+#include <glad/glad.h>
+#endif
 
 // glm
 #include <glm/glm.hpp>
@@ -409,16 +409,36 @@ int main() {
     luvoasi_window->AddMouseButtonEventHandler(mousebutton_callback);
     luvoasi_window->AddCursorPosEventHandler(cursorpos_callback);
 
+    LUVOASI_DEBUG_STDOUT("Window is created.\n");
+
+    // glad
+    #ifndef EMSCRIPTEN
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        LUVOASI_DEBUG_STDOUT("OpenGL is failed to be initialized using glad.\n");
+        return -1;
+    }
+
+    LUVOASI_DEBUG_STDOUT("OpenGL is initialized using glad.\n");
+    #endif
+
     // imgui
-    IMGUI_CHECKVERSION();
+    if (!IMGUI_CHECKVERSION()) {
+        LUVOASI_DEBUG_STDOUT("imgui is not version checked.\n");
+    }
     ImGui::CreateContext();
-    ImGuiIO& imgui_io = ImGui::GetIO();
+    ImGuiIO& imgui_io = ImGui::GetIO(); (void) imgui_io;
 
     ImGui::StyleColorsDark();
 
     Luvoasi::GLFWWindow* luvoasi_glfw_window = dynamic_cast<Luvoasi::GLFWWindow*>(luvoasi_window.get());
     ImGui_ImplGlfw_InitForOpenGL(luvoasi_glfw_window->GetRawPointer(), true);
+    #ifdef EMSCRIPTEN
     ImGui_ImplOpenGL3_Init("#version 300 es");
+    #else
+    ImGui_ImplOpenGL3_Init("#version 150");
+    #endif
+
+    LUVOASI_DEBUG_STDOUT("imgui is initialized.\n");
 
     //
     world_camera = Camera(glm::ortho(
@@ -434,6 +454,8 @@ int main() {
     // Asset testing
     asset_manager = std::make_unique<AssetManager>("/res/");
 
+    LUVOASI_DEBUG_STDOUT("Asset manager is initialized.\n");
+
     // Textures
     tex = asset_manager->GetAsset<Texture>(L"textures/minecraft_atlas/texture");
     gui_tex = asset_manager->GetAsset<Texture>(L"textures/gui");
@@ -446,6 +468,8 @@ int main() {
     assert(gui_tex);
     assert(atlas_test);
     assert(character_test_tex);
+    
+    LUVOASI_DEBUG_STDOUT("Textures are loaded.\n");
 
     std::vector<std::wstring> texture_asset_list = asset_manager->GetAssetList<Texture>()->GetLoadedAssetList();
     for (auto asset_path : texture_asset_list) {

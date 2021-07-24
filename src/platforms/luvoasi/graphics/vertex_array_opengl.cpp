@@ -1,6 +1,10 @@
 #include "platforms/luvoasi/graphics/vertex_array_opengl.h"
 
-#include <GLES3/gl3.h>
+#ifdef EMSCRIPTEN
+#include "GLES3/gl3.h"
+#else
+#include "glad/glad.h"
+#endif
 
 #include "platforms/luvoasi/graphics/shader_opengl.h"
 

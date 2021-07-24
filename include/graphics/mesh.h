@@ -5,8 +5,12 @@
 #include <vector>
 #include <memory>
 
-#include <GLFW/glfw3.h>
+#ifdef EMSCRIPTEN
 #include <GLES3/gl3.h>
+#else
+#include <glad/glad.h>
+#endif
+
 #include <glm/glm.hpp>
 
 #include "graphics/texture.h"

@@ -63,7 +63,7 @@ std::filesystem::path AssetManager::ResolveAssetPath(const std::wstring path) co
         file_path.replace_extension("");
 
         if (file_path.string().rfind(full_path.string()) == 0) {
-            DEBUG_STDOUT("ResolveAssetPath() : found! : %s\n", p.path().c_str());
+            DEBUG_STDOUT("ResolveAssetPath() : found! : %s\n", p.path().string().c_str());
 
             return p.path();
         }
@@ -178,7 +178,8 @@ std::unique_ptr<pugi::xml_document> LoadAsset(std::filesystem::path path) {
 template<>
 std::unique_ptr<Texture> LoadAsset(std::filesystem::path path) {
     int img_width, img_height, img_nr_channels;
-    unsigned char *data = stbi_load(path.c_str(), &img_width, &img_height, &img_nr_channels, 0);
+    // path.c_str() results differ depends on the operating system.
+    unsigned char *data = stbi_load(path.string().c_str(), &img_width, &img_height, &img_nr_channels, 0);
     if (!data) {
         DEBUG_STDOUT("LoadAsset() : Texture load failed\n");
         return nullptr;
@@ -193,7 +194,10 @@ std::unique_ptr<Texture> LoadAsset(std::filesystem::path path) {
     } else {
         DEBUG_STDOUT("Unexpected image channels : %d\n", img_nr_channels);
     }
+    DEBUG_STDOUT("LoadAsset() : unpack alignment setting.\n");
     glPixelStorei(GL_UNPACK_ALIGNMENT, img_nr_channels);
+
+    DEBUG_STDOUT("LoadAsset() : Ready to create texture...\n");
 
     std::unique_ptr<Texture> texture = std::make_unique<Texture>(
         img_width, img_height, img_nr_channels, data, format, format

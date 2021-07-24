@@ -223,12 +223,12 @@ void Mesh::AttachBuffer(std::unique_ptr<IBuffer> buffer, BufferLayout layout) {
     Bind();
     buffer->Bind();
 
-    unsigned int stride = 0;
+    uint32_t stride = 0;
     for (auto& element : layout.GetElements()) {
         stride += element.size * element.bytes_of_type;
     }
 
-    unsigned int offset = 0;
+    intptr_t offset = 0;
     for (auto& element : layout.GetElements()) {
         glVertexAttribPointer(element.index, element.size, element.gl_type, GL_FALSE, stride, (void*) offset);
         glEnableVertexAttribArray(element.index);

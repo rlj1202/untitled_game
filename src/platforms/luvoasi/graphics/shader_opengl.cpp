@@ -2,7 +2,11 @@
 
 #include "platforms/luvoasi/graphics/shader_opengl.h"
 
+#ifdef EMSCRIPTEN
 #include <GLES3/gl3.h>
+#else
+#include <glad/glad.h>
+#endif
 
 namespace Luvoasi {
 
@@ -16,6 +20,9 @@ template<> const uint32_t OpenGLDataType<DataType::INT16>::value = GL_SHORT;
 template<> const uint32_t OpenGLDataType<DataType::UINT16>::value = GL_UNSIGNED_SHORT;
 template<> const uint32_t OpenGLDataType<DataType::INT32>::value = GL_INT;
 template<> const uint32_t OpenGLDataType<DataType::UINT32>::value = GL_UNSIGNED_INT;
+template<> const uint32_t OpenGLDataType<DataType::INT64>::value = 0;
+template<> const uint32_t OpenGLDataType<DataType::UINT64>::value = 0;
+
 template<> const uint32_t OpenGLDataType<DataType::FLOAT16>::value = GL_HALF_FLOAT;
 template<> const uint32_t OpenGLDataType<DataType::FLOAT32>::value = GL_FLOAT;
 template<> const uint32_t OpenGLDataType<DataType::FLOAT64>::value = 0;

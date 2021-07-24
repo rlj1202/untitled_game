@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include <GLFW/glfw3.h>
+
 #include "graphics/mesh_builder.h"
 
 bool GuiArea::IsIn(const glm::vec2 pos) {
