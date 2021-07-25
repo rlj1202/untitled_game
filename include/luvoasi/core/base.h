@@ -1,7 +1,13 @@
 #ifndef H_LUVOASI_BASE
 #define H_LUVOASI_BASE
 
-#include <cstdint> // for types such as uint32_t, int32_t etc...
+// for types such as uint32_t, int32_t etc...
+#include <cstdint>
+
+// emscripten
+#if defined(EMSCRIPTEN)
+#include <emscripten.h>
+#endif
 
 #ifdef LUVOASI_DEBUG_ENABLE
     #include <cstdio>

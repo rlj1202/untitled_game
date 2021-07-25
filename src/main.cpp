@@ -7,14 +7,6 @@
 #include <fstream>
 #include <filesystem>
 
-// emscripten
-#ifdef EMSCRIPTEN
-#include <emscripten.h>
-#include <GLES3/gl3.h>
-#else
-#include <glad/glad.h>
-#endif
-
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -30,10 +22,11 @@
 
 // ocornut/imgui
 #include <imgui.h>
+// FIXME: hiding implementation
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-// ???
+// old files... someday these will be removed away :D
 #include "graphics/texture.h"
 #include "graphics/shader.h"
 #include "graphics/mesh.h"
@@ -48,9 +41,12 @@
 
 // luvoasi
 #define LUVOASI_DEBUG_ENABLE
+#define LUVOASI_ASSERT_ENABLE
 #include "luvoasi/core/base.h"
 #include "luvoasi/window.h"
+// FIXME: hiding implementaion
 #include "platforms/luvoasi/window_glfw.h"
+#include "platforms/luvoasi/graphics/common_opengl.h"
 #include "luvoasi/graphics/shader.h"
 #include "luvoasi/graphics/texture.h"
 #include "luvoasi/graphics/buffer.h"
@@ -87,9 +83,14 @@ std::unique_ptr<BlockType> blocktype_wood_top;
 
 std::unique_ptr<Luvoasi::Window> luvoasi_window;
 std::unique_ptr<Luvoasi::ShaderProgram> luvoasi_shader_program;
-std::unique_ptr<Luvoasi::Texture2D> luvoasi_texture_test;
+
+std::unique_ptr<Luvoasi::Texture2D> luvoasi_tex_test;
+std::unique_ptr<Luvoasi::Texture2D> luvoasi_tex_gui;
+
 std::unique_ptr<Luvoasi::VertexArray> luvoasi_va_test;
 std::unique_ptr<Luvoasi::VertexArray> luvoasi_va_chunk;
+std::unique_ptr<Luvoasi::VertexArray> luvoasi_va_gui;
+
 std::unique_ptr<Luvoasi::FontRenderer> luvoasi_font_renderer;
 
 Camera world_camera;
@@ -254,6 +255,7 @@ void mainLoop() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // imgui
+    // FIXME: hiding implementation
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -364,6 +366,49 @@ void mainLoop() {
     luvoasi_window->PollEvents();
 }
 
+bool initOpenGL() {
+    #if defined(EMSCRIPTEN)
+    // do nothing, emscripten compiler will link it.
+    LUVOASI_DEBUG_STDOUT("OpenGL is initialized.\n");
+    #elif defined(_WIN32)
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        LUVOASI_DEBUG_STDOUT("OpenGL is failed to be initialized using glad.\n");
+        return false;
+    }
+
+    LUVOASI_DEBUG_STDOUT("OpenGL is initialized using glad.\n");
+    #endif
+
+    return true;
+}
+
+void initImgui() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& imgui_io = ImGui::GetIO(); (void) imgui_io;
+
+    ImGui::StyleColorsDark();
+
+    // FIXME: hiding implementation
+    Luvoasi::GLFWWindow* luvoasi_glfw_window = dynamic_cast<Luvoasi::GLFWWindow*>(luvoasi_window.get());
+    ImGui_ImplGlfw_InitForOpenGL(luvoasi_glfw_window->GetRawPointer(), true);
+
+#if defined(EMSCRIPTEN)
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+#elif defined(_WIN32)
+    ImGui_ImplOpenGL3_Init("#version 150");
+#endif
+
+    LUVOASI_DEBUG_STDOUT("imgui is initialized.\n");
+}
+
+void cleanImgui() {
+    // FIXME: hiding implementation
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
 int main() {
     srand(std::time(nullptr));
 
@@ -401,7 +446,7 @@ int main() {
 
     // start of program
     luvoasi_window = std::move(Luvoasi::CreateWindow(width, height, title.c_str()));
-    assert(luvoasi_window);
+    LUVOASI_ASSERT(luvoasi_window);
 
     luvoasi_window->Bind();
     luvoasi_window->AddKeyEventHandler(key_callback);
@@ -411,34 +456,8 @@ int main() {
 
     LUVOASI_DEBUG_STDOUT("Window is created.\n");
 
-    // glad
-    #ifndef EMSCRIPTEN
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        LUVOASI_DEBUG_STDOUT("OpenGL is failed to be initialized using glad.\n");
-        return -1;
-    }
-
-    LUVOASI_DEBUG_STDOUT("OpenGL is initialized using glad.\n");
-    #endif
-
-    // imgui
-    if (!IMGUI_CHECKVERSION()) {
-        LUVOASI_DEBUG_STDOUT("imgui is not version checked.\n");
-    }
-    ImGui::CreateContext();
-    ImGuiIO& imgui_io = ImGui::GetIO(); (void) imgui_io;
-
-    ImGui::StyleColorsDark();
-
-    Luvoasi::GLFWWindow* luvoasi_glfw_window = dynamic_cast<Luvoasi::GLFWWindow*>(luvoasi_window.get());
-    ImGui_ImplGlfw_InitForOpenGL(luvoasi_glfw_window->GetRawPointer(), true);
-    #ifdef EMSCRIPTEN
-    ImGui_ImplOpenGL3_Init("#version 300 es");
-    #else
-    ImGui_ImplOpenGL3_Init("#version 150");
-    #endif
-
-    LUVOASI_DEBUG_STDOUT("imgui is initialized.\n");
+    if (!initOpenGL()) return -1;
+    initImgui();
 
     //
     world_camera = Camera(glm::ortho(
@@ -462,12 +481,13 @@ int main() {
     atlas_test = asset_manager->GetAsset<TextureAtlas>(L"textures/minecraft_atlas");
     character_test_tex = asset_manager->GetAsset<Texture>(L"textures/character_test");
 
-    luvoasi_texture_test = Luvoasi::Texture2D::CreateTexture2DFromFile("/res/textures/character_test.png");
+    luvoasi_tex_test = Luvoasi::Texture2D::CreateTexture2DFromFile("/res/textures/character_test.png");
+    luvoasi_tex_gui = Luvoasi::Texture2D::CreateTexture2DFromFile("/res/textures/gui.png");
 
-    assert(tex);
-    assert(gui_tex);
-    assert(atlas_test);
-    assert(character_test_tex);
+    LUVOASI_ASSERT(tex);
+    LUVOASI_ASSERT(gui_tex);
+    LUVOASI_ASSERT(atlas_test);
+    LUVOASI_ASSERT(character_test_tex);
     
     LUVOASI_DEBUG_STDOUT("Textures are loaded.\n");
 
@@ -595,6 +615,40 @@ int main() {
         luvoasi_va_test->AttachIndexBuffer(std::move(index_buffer));
         luvoasi_va_test->Unbind();
     }
+    {
+        // nine-patch gui box?
+        float gui_corner = 5.0f;
+        float gui_width = 50.0f;
+        float gui_height = 50.0f;
+
+        /*
+         * -  -  -  -
+         * 
+         * -  -  -  -
+         * 
+         * -  -  -  -
+         * 
+         * -  -  -  -
+         */
+
+        float vertices[] = {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        };
+        unsigned int indices[] = {
+            0, 1, 2,
+        };
+
+        auto array_buffer = Luvoasi::ArrayBuffer::CreateBuffer(vertices, std::size(vertices));
+        auto index_buffer = Luvoasi::IndexBuffer::CreateBuffer(indices, std::size(indices));
+
+        luvoasi_va_gui = Luvoasi::VertexArray::CreateVertexArray();
+        luvoasi_va_gui->AttachArrayBuffer(std::move(array_buffer), {
+            Luvoasi::BufferElement{ 0, 3, false, Luvoasi::DataType::FLOAT32 },
+            Luvoasi::BufferElement{ 1, 2, false, Luvoasi::DataType::FLOAT32 },
+        });
+        luvoasi_va_gui->AttachIndexBuffer(std::move(index_buffer));
+        luvoasi_va_gui->Unbind();
+    }
 
     // Model
     const MeshProfile profile_quad(
@@ -675,20 +729,19 @@ int main() {
     );
     luvoasi_shader_program->Bind();
 
+    // begin main loop
     beforeLoop();
 
-#ifdef EMSCRIPTEN
+#if defined(EMSCRIPTEN)
     emscripten_set_main_loop(&mainLoop, 0, 1);
-#else
+#elif defined(_WIN32)
     while (!luvoasi_window->ShouldClose()) {
         mainLoop();
     }
 #endif
 
-    // imgui cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    // clean up
+    cleanImgui();
 
     return 0;
 }

@@ -21,8 +21,10 @@ file(GLOB IMGUI_SOURCES
     imgui/backends/*_opengl3.cpp)
 add_library(imgui STATIC ${IMGUI_SOURCES})
 target_include_directories(imgui PUBLIC imgui imgui/backends)
-target_link_libraries(imgui PUBLIC glad)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_IMPL_OPENGL_LOADER_GLAD")
+if (WIN32)
+    target_link_libraries(imgui PUBLIC glad)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIMGUI_IMPL_OPENGL_LOADER_GLAD")
+endif()
 
 ################################################################################
 # stb

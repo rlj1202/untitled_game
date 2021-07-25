@@ -1,12 +1,6 @@
 #ifndef H_LUVOASI_SHADER_OPENGL
 #define H_LUVOASI_SHADER_OPENGL
 
-#ifdef EMSCRIPTEN
-#include <GLES3/gl3.h>
-#else
-#include <glad/glad.h>
-#endif
-
 #include "luvoasi/core/types.h"
 #include "luvoasi/graphics/shader.h"
 

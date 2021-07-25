@@ -87,13 +87,14 @@ if (EMSCRIPTEN)
                               -lopenal \
                               --preload-file ${PROJECT_SOURCE_DIR}/res@/res \
                               "
-)
+    )
 elseif(WIN32)
     set_target_properties(${PROJECT_NAME}
         PROPERTIES LINK_FLAGS "\
                             -static-libgcc \
                             -static-libstdc++ \
-                            ")
+                            "
+    )
 endif()
 
 target_link_libraries(${PROJECT_NAME}

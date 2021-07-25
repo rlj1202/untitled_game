@@ -1,10 +1,6 @@
 #include "platforms/luvoasi/graphics/context_opengl.h"
 
-#ifdef EMSCRIPTEN
-#include <GLES3/gl3.h>
-#else
-#include <glad/glad.h>
-#endif
+#include "platforms/luvoasi/graphics/common_opengl.h"
 
 #include <GLFW/glfw3.h>
 

@@ -1,11 +1,6 @@
 #include "platforms/luvoasi/graphics/vertex_array_opengl.h"
 
-#ifdef EMSCRIPTEN
-#include "GLES3/gl3.h"
-#else
-#include "glad/glad.h"
-#endif
-
+#include "platforms/luvoasi/graphics/common_opengl.h"
 #include "platforms/luvoasi/graphics/shader_opengl.h"
 
 namespace Luvoasi {
@@ -57,7 +52,7 @@ void OpenGLVertexArray::AttachArrayBuffer(std::unique_ptr<ArrayBuffer> buffer, c
         stride += DataType::GetBytes(element.internal_type) * element.size;
     }
 
-    uint32_t offset = 0;
+    intptr_t offset = 0;
     for (const BufferElement element : layout.GetElements()) {
         glVertexAttribPointer(
             element.index, element.size,

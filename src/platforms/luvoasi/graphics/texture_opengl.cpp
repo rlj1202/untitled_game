@@ -1,12 +1,7 @@
 #define LUVOASI_DEBUG_ENABLE
 
+#include "platforms/luvoasi/graphics/common_opengl.h"
 #include "platforms/luvoasi/graphics/texture_opengl.h"
-
-#ifdef EMSCRIPTEN
-#include "GLES3/gl3.h"
-#else
-#include "glad/glad.h"
-#endif
 
 namespace Luvoasi {
 

@@ -1,10 +1,10 @@
 #ifndef H_LUVOASI_WINDOW
 #define H_LUVOASI_WINDOW
 
-#include <GLFW/glfw3.h>
-
 #include "luvoasi/core/base.h"
 #include "luvoasi/event.h"
+
+#include <GLFW/glfw3.h>
 
 #include <memory>
 

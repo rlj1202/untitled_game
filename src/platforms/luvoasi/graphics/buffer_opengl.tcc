@@ -2,11 +2,7 @@
 
 #include <type_traits>
 
-#ifdef EMSCRIPTEN
-#include <GLES3/gl3.h>
-#else
-#include <glad/glad.h>
-#endif
+#include "platforms/luvoasi/graphics/common_opengl.h"
 
 namespace Luvoasi {
 
